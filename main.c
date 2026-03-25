@@ -3,6 +3,35 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
+int MAC_getter(char *to_convert, uint8_t *converted)
+{
+	char *tok[6];
+	
+	int i = 0;
+
+	tok[i] = strtok(to_convert, ":");
+	if (!tok[i])
+		return 0;
+	for (i = 1; i < 6; i++)
+	{
+		tok[i] = strtok(NULL, ":");
+		if (!tok[i])
+			return 0;
+	}
+
+	char *cursor;
+	for (i = 0; i < 6; i++)
+	{
+		unsigned long val = strtoul(tok[i], &cursor, 16);
+		if (*cursor != '\0')
+			return 0;
+		if (val > 0xFF)
+    		return 0;
+		converted[i] = val;
+	}
+
+	return 1;
+}
 
 int ip_getter(char *to_convert, uint8_t *converted)
 {
@@ -41,11 +70,13 @@ int main(int ac, char **av)
 	
 	if (!ip_getter(source_ip , source_ip_converted))
 		return 1;
-	if (!ip_getter(source_mac, target_ip_converted))
+	if (!ip_getter(target_ip, target_ip_converted))
 		return 1;
-
-	   // af = INET ip v4,  char de la string brut, dest = convertion string to format ip usable
-
+	if (!MAC_getter(source_mac , source_mac_converted))
+		return 1;
+	if (!MAC_getter(target_mac, target_mac_converted))
+		return 1;
+	
 
 	return 0;
 }
