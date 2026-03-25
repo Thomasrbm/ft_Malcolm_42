@@ -1,0 +1,122 @@
+
+
+
+
+But :  verroler une table ARP.
+
+
+
+
+Table ARP = c est la table de conversion entre ton ip(qui est changeable) vers ton adresse MAC unique
+
+
+
+
+
+
+
+
+
+------------ Fonctionnement de la communication PC a PC 
+
+1/ 
+
+Si A veut parler a B 
+
+
+A : IP 192.168.1.1  /  MAC aa:aa:aa:aa:aa:aa
+B : IP 192.168.1.2  /  MAC bb:bb:bb:bb:bb:bb
+
+
+
+2/ 
+
+
+A parle a TOUT le reseau (en broadcast)
+
+
+
+ARP Request
+  src MAC : aa:aa:aa:aa:aa:aa
+  src IP  : 192.168.1.1
+  dst MAC : ff:ff:ff:ff:ff:ff   ← broadcast, tout le monde reçoit
+  dst IP  : 192.168.1.2         ← "qui a cette IP ?"
+
+
+3/
+
+B repond
+
+ARP Reply
+  src MAC : bb:bb:bb:bb:bb:bb   ← "c'est moi !"
+  src IP  : 192.168.1.2
+  dst MAC : aa:aa:aa:aa:aa:aa
+  dst IP  : 192.168.1.1
+
+
+
+
+4/ 
+
+A save l adresse en cache
+
+
+Table ARP de A :
+  192.168.1.2  →  bb:bb:bb:bb:bb:bb
+
+
+
+
+----------
+
+
+Visible sur cache kernel via   arp -n       OU      ip neigh 
+
+
+
+
+
+
+
+
+----------  MAN IN THE MIDDLE
+
+
+
+
+Réseau avant l'attaque :
+
+  [Victime]  table ARP :  192.168.1.1 → aa:aa:aa:aa:aa:aa  ✓
+
+
+Toi tu lances ft_malcolm :
+  source_ip  = 192.168.1.1        (IP de A que tu vas usurper)
+  source_mac = cc:cc:cc:cc:cc:cc  (ta MAC, ou une MAC inventée)
+  target_ip  = 192.168.1.50       (la victime)
+  target_mac = bb:bb:bb:bb:bb:bb  (vraie MAC de la victime)
+
+
+
+
+
+
+Tu attends que la victime envoie :
+  "Qui a l'IP 192.168.1.1 ?"
+
+
+
+
+
+
+Tu réponds avant A (ou à la place) :
+  "C'est moi ! 192.168.1.1 → cc:cc:cc:cc:cc:cc"
+
+
+
+
+
+Réseau après l'attaque :
+
+  [Victime]  table ARP :  192.168.1.1 → cc:cc:cc:cc:cc:cc  ✗
+                                                ↑
+                                          ta MAC à toi
