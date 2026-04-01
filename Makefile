@@ -1,18 +1,22 @@
-NAME	= ft_malcolm
+NAME    = ft_malcolm
 
-CC		= gcc
-CFLAGS	= -Wall -Wextra -Werror
+CC      = gcc
+CFLAGS  = -Wall -Wextra -Werror
 
-SRCS 	= main.c parse.c network.c arp.c
-OBJS	= $(SRCS:.c=.o)
+SRCS    = main.c parse.c network.c arp.c
+OBJS    = $(addprefix objs/, $(SRCS:.c=.o))
 
 all: $(NAME)
+
+objs/%.o: %.c
+	mkdir -p objs
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(NAME): $(OBJS)
 	$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
 
 clean:
-	rm -f $(OBJS)
+	rm -rf objs
 
 fclean: clean
 	rm -f $(NAME)

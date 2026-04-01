@@ -10,6 +10,9 @@ int receive_arp(int sockfd, uint8_t *buffer, uint8_t *source_ip_converted)
 			perror("recvfrom");
 			return 0;
 		}
+		printf("bytes 20-21 (opcode): %02x %02x\n", buffer[20], buffer[21]);
+		printf("bytes 24-27 (src_ip): %d.%d.%d.%d\n", buffer[28], buffer[29], buffer[30], buffer[31]);
+		printf("bytes 38-41 (dst_ip): %d.%d.%d.%d\n", buffer[38], buffer[39], buffer[40], buffer[41]);
 
 		// struct ethernet_header *eth = (struct ethernet_header *)buffer;  // on prent les 14 premier octet du buffer et ils vont dans la structure (contigue d octet une structure en realite)
 		struct arp_packet *arp = (struct arp_packet *)(buffer + 14); // les restat dans la partie tram arp
