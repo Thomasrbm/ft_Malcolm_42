@@ -7,86 +7,81 @@ static int setup_socket(void)
 	sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (sockfd < 0)
 	{
-		perror("socket");
+		printf("socket: %s\n", strerror(errno));
 		return (-1);
 	}
 	return (sockfd);
 }
 
-static struct ifaddrs *find_active_interface(struct ifaddrs *ifaddr)
+static struct ifaddrs *find_active_interface(struct ifaddrs *ifaddr_head)
 {
 	struct ifaddrs *ptr;
 
-	ptr = ifaddr;
-
+	ptr = ifaddr_head;
 	while (ptr)
 	{
 		if (ptr->ifa_addr != NULL
-			&& (ptr->ifa_flags & IFF_RUNNING)
-			&& !(ptr->ifa_flags & IFF_LOOPBACK))
+			&& (ptr->ifa_flags & IFF_RUNNING) // premier running
+			&& !(ptr->ifa_flags & IFF_LOOPBACK)) // et n est pas lo  (wifi / eth) selon sur quoi co peu importe = meme requete arp pour tous)
 			return (ptr);
 		ptr = ptr->ifa_next;
 	}
 	return (NULL);
 }
 
-static int bind_to_interface(int sockfd, struct ifaddrs *iface, int *ifindex, int proto)
+static int bind_to_interface(int sockfd, struct ifaddrs *selected_interface, int *interface_idx)
 {
-	struct sockaddr_ll sll;
-	unsigned int       idx;
+	unsigned int idx;
 
-	idx = if_nametoindex(iface->ifa_name);
+	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, selected_interface->ifa_name, ft_strlen(selected_interface->ifa_name) + 1) < 0)
+	{
+		printf("setsockopt: %s\n", strerror(errno));
+		return (0);
+	}
+	idx = if_nametoindex(selected_interface->ifa_name); // 
 	if (idx == 0)
 	{
-		perror("if_nametoindex");
+		printf("if_nametoindex: %s\n", strerror(errno));
 		return (0);
 	}
-	memset(&sll, 0, sizeof(sll));
-	sll.sll_family   = AF_PACKET;
-	sll.sll_protocol = htons(proto);
-	sll.sll_ifindex  = (int)idx;
-	if (bind(sockfd, (struct sockaddr *)&sll, sizeof(sll)) < 0)
-	{
-		perror("bind");
-		return (0);
-	}
-	*ifindex = sll.sll_ifindex;
+	*interface_idx = (int)idx;
 	return (1);
 }
 
-static int get_interface(int sockfd, int proto)
+// ifaddrs struc avec toute les interface dans  : -> char	*ifa_name;
+int get_interface(int sockfd)
 {
-	struct ifaddrs *ifaddr;
-	struct ifaddrs *iface;
-	int             ifindex;
+	struct ifaddrs *ifaddr_head; // pour boucler
+	struct ifaddrs *selected_interface; // la bonne interface => sera pas free car va pointer va ifaddr_head (seul allocated)
+	int             interface_idx;
 
-	if (getifaddrs(&ifaddr) < 0)
+	if (getifaddrs(&ifaddr_head) < 0) // recup toutes les interface reseau de la machine avec adresss
 	{
-		perror("getifaddrs");
+		printf("getifaddrs: %s\n", strerror(errno));
 		return (-1);
 	}
-	iface = find_active_interface(ifaddr);
-	if (!iface)
+	selected_interface = find_active_interface(ifaddr_head);
+	if (!selected_interface)
 	{
 		printf("no interface found\n");
-		freeifaddrs(ifaddr);
+		freeifaddrs(ifaddr_head);
 		return (-1);
 	}
-	if (!bind_to_interface(sockfd, iface, &ifindex, proto))
+	if (!bind_to_interface(sockfd, selected_interface, &interface_idx))
 	{
-		freeifaddrs(ifaddr);
+		freeifaddrs(ifaddr_head);
 		return (-1);
 	}
-	printf("Found available interface: %s\n", iface->ifa_name);
-	freeifaddrs(ifaddr);
-	return (ifindex);
+	printf("Found available interface: %s\n", selected_interface->ifa_name);
+	freeifaddrs(ifaddr_head);
+	return (interface_idx);
 }
 
-int setup_network(int *ifindex)
+int setup_network(int *interface_idx)
 {
 	g_sockfd = setup_socket();
 	if (g_sockfd < 0)
 		return (0);
-	*ifindex = get_interface(g_sockfd, ETH_P_ARP);
-	return (*ifindex >= 0);
+	*interface_idx = get_interface(g_sockfd);
+	return (*interface_idx >= 0);
 }

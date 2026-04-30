@@ -3,29 +3,35 @@
 void log_arp_request(uint8_t *buffer)
 {
 	struct arp_packet *arp;
+	char               ip_str[INET_ADDRSTRLEN];
 
 	arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
 	printf("An ARP request has been broadcast.\n");
 	printf("mac address of request: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		arp->src_mac[0], arp->src_mac[1], arp->src_mac[2],
 		arp->src_mac[3], arp->src_mac[4], arp->src_mac[5]);
-	printf("IP address of request: %s\n", inet_ntoa(*(struct in_addr *)arp->src_ip));
+	inet_ntop(AF_INET, arp->src_ip, ip_str, INET_ADDRSTRLEN);
+	printf("IP address of request: %s\n", ip_str);
 }
 
 void print_verbose(uint8_t *buffer, t_addrs *addrs)
 {
 	struct arp_packet *arp;
+	char               ip_str[INET_ADDRSTRLEN];
 
 	arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
-	printf("[REQUEST] from IP:  %s\n", inet_ntoa(*(struct in_addr *)arp->src_ip));
+	inet_ntop(AF_INET, arp->src_ip, ip_str, INET_ADDRSTRLEN);
+	printf("[REQUEST] from IP:  %s\n", ip_str);
 	printf("[REQUEST] from MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		arp->src_mac[0], arp->src_mac[1], arp->src_mac[2],
 		arp->src_mac[3], arp->src_mac[4], arp->src_mac[5]);
-	printf("[REPLY]   spoofing IP:  %s\n", inet_ntoa(*(struct in_addr *)addrs->source_ip));
+	inet_ntop(AF_INET, addrs->source_ip, ip_str, INET_ADDRSTRLEN);
+	printf("[REPLY]   spoofing IP:  %s\n", ip_str);
 	printf("[REPLY]   spoofing MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		addrs->source_mac[0], addrs->source_mac[1], addrs->source_mac[2],
 		addrs->source_mac[3], addrs->source_mac[4], addrs->source_mac[5]);
-	printf("[REPLY]   target IP:    %s\n", inet_ntoa(*(struct in_addr *)addrs->target_ip));
+	inet_ntop(AF_INET, addrs->target_ip, ip_str, INET_ADDRSTRLEN);
+	printf("[REPLY]   target IP:    %s\n", ip_str);
 	printf("[REPLY]   target MAC:   %02x:%02x:%02x:%02x:%02x:%02x\n",
 		addrs->target_mac[0], addrs->target_mac[1], addrs->target_mac[2],
 		addrs->target_mac[3], addrs->target_mac[4], addrs->target_mac[5]);
@@ -33,11 +39,15 @@ void print_verbose(uint8_t *buffer, t_addrs *addrs)
 
 void print_verbose_gratuitous(t_addrs *addrs)
 {
-	printf("[SEND] spoofing IP:  %s\n", inet_ntoa(*(struct in_addr *)addrs->source_ip));
+	char ip_str[INET_ADDRSTRLEN];
+
+	inet_ntop(AF_INET, addrs->source_ip, ip_str, INET_ADDRSTRLEN);
+	printf("[SEND] spoofing IP:  %s\n", ip_str);
 	printf("[SEND] spoofing MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		addrs->source_mac[0], addrs->source_mac[1], addrs->source_mac[2],
 		addrs->source_mac[3], addrs->source_mac[4], addrs->source_mac[5]);
-	printf("[SEND] target IP:    %s\n", inet_ntoa(*(struct in_addr *)addrs->target_ip));
+	inet_ntop(AF_INET, addrs->target_ip, ip_str, INET_ADDRSTRLEN);
+	printf("[SEND] target IP:    %s\n", ip_str);
 	printf("[SEND] target MAC:   %02x:%02x:%02x:%02x:%02x:%02x\n",
 		addrs->target_mac[0], addrs->target_mac[1], addrs->target_mac[2],
 		addrs->target_mac[3], addrs->target_mac[4], addrs->target_mac[5]);

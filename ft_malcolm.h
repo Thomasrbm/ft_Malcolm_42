@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -46,6 +48,14 @@ typedef struct s_addrs {
 	uint8_t target_mac[6];
 } t_addrs;
 
+// utils.c
+void         *ft_memset(void *s, int c, size_t n);
+void         *ft_memcpy(void *dst, const void *src, size_t n);
+int           ft_memcmp(const void *s1, const void *s2, size_t n);
+int           ft_strcmp(const char *s1, const char *s2);
+size_t        ft_strlen(const char *s);
+unsigned long ft_strtoul(const char *ptr, char **endptr, int base);
+
 // args.c
 int  parse_args(int ac, char **av, int *verbose, int *gratuitous,
 		int *hex, int *arg_offset);
@@ -56,14 +66,14 @@ int  ip_getter(char *to_convert, uint8_t *converted);
 int  load_addresses(char **args, t_addrs *a);
 
 // network.c
-int  setup_network(int *ifindex);
+int  setup_network(int *interface_idx);
 
 // arp.c
 int  receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs);
 void build_reply(uint8_t *reply, t_addrs *addrs);
-int  send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int ifindex, int hex);
-int  send_gratuitous(t_addrs *addrs, int ifindex, int verbose, int hex);
-int  run_spoof(t_addrs *addrs, int ifindex, uint8_t *buffer, int verbose, int hex);
+int  send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, int hex);
+int  send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex);
+int  run_spoof(t_addrs *addrs, int interface_idx, uint8_t *buffer, int verbose, int hex);
 
 // log.c
 void log_arp_request(uint8_t *buffer);

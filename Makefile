@@ -3,7 +3,7 @@ NAME    = ft_malcolm
 CC      = gcc
 CFLAGS  = -Wall -Wextra -Werror
 
-SRCS    = main.c args.c parse.c network.c arp.c log.c
+SRCS    = main.c args.c parse.c network.c arp.c log.c utils.c
 OBJS    = $(addprefix objs/, $(SRCS:.c=.o))
 
 all: $(NAME)

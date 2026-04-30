@@ -2,11 +2,11 @@
 
 static int parse_flag(char *flag, int *verbose, int *gratuitous, int *hex)
 {
-	if (strcmp(flag, "-v") == 0)
+	if (ft_strcmp(flag, "-v") == 0)
 		*verbose = 1;
-	else if (strcmp(flag, "-g") == 0)
+	else if (ft_strcmp(flag, "-g") == 0)
 		*gratuitous = 1;
-	else if (strcmp(flag, "-hex") == 0)
+	else if (ft_strcmp(flag, "-hex") == 0)
 		*hex = 1;
 	else
 		return (0);

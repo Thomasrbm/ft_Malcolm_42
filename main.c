@@ -7,8 +7,10 @@ void handle_sigint(int sig)
 	(void)sig;
 	printf("\nExiting program...\n");
 	if (g_sockfd != -1)
+	{
 		close(g_sockfd);
-	exit(0);
+		g_sockfd = -1;
+	}
 }
 
 static void setup_signal_handler(void)
@@ -19,27 +21,20 @@ static void setup_signal_handler(void)
 	sigemptyset(&sa.sa_mask); // remet a 0 pour pas catch des signaux random
 	sa.sa_flags = 0; // same
 	if (sigaction(SIGINT, &sa, NULL) < 0) // le signal a catch pour la structure DONC la ft a appliquer
-		perror("sigaction");
+		printf("sigaction: %s\n", strerror(errno));
 }
 
-static int run_ipv4(t_addrs *addrs, int gratuitous, int verbose, int hex)
+static int run_ipv4(char **args, t_addrs *addrs, int gratuitous, int verbose, int hex)
 {
-	int     ifindex;
+	int     interface_idx; // index de l interface 
 	uint8_t buffer[ARP_FRAME_SIZE];
-
-	if (!setup_network(&ifindex))
-		return (0);
-	if (gratuitous)
-		return (send_gratuitous(addrs, ifindex, verbose, hex)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
-	return (run_spoof(addrs, ifindex, buffer, verbose, hex));
-}
-
-static int dispatch(t_addrs *addrs, char **args, int gratuitous, int verbose,
-					int hex)
-{
 	if (!load_addresses(args, addrs))
 		return (0);
-	return (run_ipv4(addrs, gratuitous, verbose, hex));
+	if (!setup_network(&interface_idx))
+		return (0);
+	if (gratuitous)
+		return (send_gratuitous(addrs, interface_idx, verbose, hex)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
+	return (run_spoof(addrs, interface_idx, buffer, verbose, hex));
 }
 
 int main(int ac, char **av)
@@ -61,8 +56,8 @@ int main(int ac, char **av)
 		return (1);
 	setup_signal_handler();
 	args = av + 1 + arg_offset; // commence apres le flag
-	memset(&addrs, 0, sizeof(addrs)); // avant de parser les ips et mac (pas de garbage value)
-	ret = !dispatch(&addrs, args, gratuitous, verbose, hex);
+	ft_memset(&addrs, 0, sizeof(addrs)); // avant de parser les ips et mac (pas de garbage value)
+	ret = run_ipv4(args, &addrs, gratuitous, verbose, hex);;
 	if (g_sockfd != -1)
 		close(g_sockfd); // close si pas ctrl c mais prog fini
 	if (!ret)
