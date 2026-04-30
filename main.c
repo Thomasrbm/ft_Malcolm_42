@@ -22,7 +22,7 @@ static void setup_signal_handler(void)
 		perror("sigaction");
 }
 
-static int run_ipv4(t_addrs *addrs, int gratuitous, int verbose)
+static int run_ipv4(t_addrs *addrs, int gratuitous, int verbose, int hex)
 {
 	int     ifindex;
 	uint8_t buffer[ARP_FRAME_SIZE];
@@ -30,34 +30,23 @@ static int run_ipv4(t_addrs *addrs, int gratuitous, int verbose)
 	if (!setup_network(&ifindex))
 		return (0);
 	if (gratuitous)
-		return (send_gratuitous(addrs, ifindex, verbose)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
-	return (run_spoof(addrs, ifindex, buffer, verbose));
+		return (send_gratuitous(addrs, ifindex, verbose, hex)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
+	return (run_spoof(addrs, ifindex, buffer, verbose, hex));
 }
 
 static int dispatch(t_addrs *addrs, char **args, int gratuitous, int verbose,
-					int ipv6_mode)
+					int hex)
 {
-	if (ipv6_mode && gratuitous)
-	{
-		printf("ft_malcolm: -g is not supported with -6\n");
-		return (0);
-	}
-	if (ipv6_mode)
-	{
-		if (!load_addresses_v6(args, addrs))
-			return (0);
-		return (run_ndp_spoof(addrs, verbose)); // pas d arp en ipv6  => Neighbor  discovery Protocol
-	}
 	if (!load_addresses(args, addrs))
 		return (0);
-	return (run_ipv4(addrs, gratuitous, verbose));
+	return (run_ipv4(addrs, gratuitous, verbose, hex));
 }
 
 int main(int ac, char **av)
 {
 	int     verbose;
 	int     gratuitous;
-	int     ipv6_mode;
+	int     hex;
 	int     arg_offset;
 	char  **args;
 	t_addrs addrs;
@@ -68,12 +57,12 @@ int main(int ac, char **av)
 		printf("ft_malcolm: must be run as root\n");
 		return (1);
 	}
-	if (!parse_args(ac, av, &verbose, &gratuitous, &ipv6_mode, &arg_offset))
+	if (!parse_args(ac, av, &verbose, &gratuitous, &hex, &arg_offset))
 		return (1);
 	setup_signal_handler();
 	args = av + 1 + arg_offset; // commence apres le flag
 	memset(&addrs, 0, sizeof(addrs)); // avant de parser les ips et mac (pas de garbage value)
-	ret = !dispatch(&addrs, args, gratuitous, verbose, ipv6_mode);
+	ret = !dispatch(&addrs, args, gratuitous, verbose, hex);
 	if (g_sockfd != -1)
 		close(g_sockfd); // close si pas ctrl c mais prog fini
 	if (!ret)

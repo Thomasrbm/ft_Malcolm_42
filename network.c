@@ -1,6 +1,6 @@
 #include "ft_malcolm.h"
 
-int setup_socket(void)
+static int setup_socket(void)
 {
 	int sockfd;
 
@@ -54,7 +54,7 @@ static int bind_to_interface(int sockfd, struct ifaddrs *iface, int *ifindex, in
 	return (1);
 }
 
-int get_interface(int sockfd, int proto)
+static int get_interface(int sockfd, int proto)
 {
 	struct ifaddrs *ifaddr;
 	struct ifaddrs *iface;

@@ -1,0 +1,44 @@
+
+
+je suis 10.0.0.99 avec MAC aa:aa:aa:aa:aa:aa.
+
+
+DB  10.0.0.1 (MAC dd:dd:...)
+
+
+serveur à 10.0.0.2 (MAC ss:ss:...)
+
+
+
+
+
+source = la parsonne usurpee.     (la db)  
+
+
+
+
+target  =  par exe le serveur qui veut parler a la db.
+
+
+
+
+
+---------------------------------------
+
+
+J ecoute toutes les arp qui sont broadcast.
+
+
+
+le serveur fait : src=10.0.0.2, dst=10.0.0.1 
+
+
+
+							(src mais vraie ip)				(src mac (notre mac))			(target ip)   (target mac)
+toi tu met ./ft_malcolm l ip cherchee 10.0.0.1  mais TA MAC aa:aa:aa:aa:aa:aa.  puis 0.0.0.2 (MAC ss:ss:...)
+
+
+on repond juste avant le db dd dd etc.
+
+
+on a poisonned la table arp de serveur.

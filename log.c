@@ -43,29 +43,34 @@ void print_verbose_gratuitous(t_addrs *addrs)
 		addrs->target_mac[3], addrs->target_mac[4], addrs->target_mac[5]);
 }
 
-void log_ns_received(uint8_t *buffer)
+void hexdump(uint8_t *data, int len)
 {
-	struct ipv6_header *ip6;
-	char                ipstr[INET6_ADDRSTRLEN];
+	int i;
+	int j;
 
-	ip6 = (struct ipv6_header *)(buffer + ETH_HEADER_SIZE);
-	inet_ntop(AF_INET6, ip6->src, ipstr, INET6_ADDRSTRLEN);
-	printf("A Neighbor Solicitation has been broadcast.\n");
-	printf("IPv6 address of request: %s\n", ipstr);
-}
-
-void print_ndp_verbose(uint8_t *buffer, t_addrs *addrs)
-{
-	struct ethernet_header *eth;
-	char                    ipstr[INET6_ADDRSTRLEN];
-
-	eth = (struct ethernet_header *)buffer;
-	printf("[NS]   from MAC:      %02x:%02x:%02x:%02x:%02x:%02x\n",
-		eth->src_mac[0], eth->src_mac[1], eth->src_mac[2],
-		eth->src_mac[3], eth->src_mac[4], eth->src_mac[5]);
-	inet_ntop(AF_INET6, addrs->source_ipv6, ipstr, INET6_ADDRSTRLEN);
-	printf("[NA]   spoofing IPv6: %s\n", ipstr);
-	printf("[NA]   spoofing MAC:  %02x:%02x:%02x:%02x:%02x:%02x\n",
-		addrs->source_mac[0], addrs->source_mac[1], addrs->source_mac[2],
-		addrs->source_mac[3], addrs->source_mac[4], addrs->source_mac[5]);
+	i = 0;
+	while (i < len)
+	{
+		printf("%04x  ", i);
+		j = 0;
+		while (j < 16)
+		{
+			if (i + j < len)
+				printf("%02x ", data[i + j]);
+			else
+				printf("   ");
+			if (j == 7)
+				printf(" ");
+			j++;
+		}
+		printf(" |");
+		j = 0;
+		while (j < 16 && i + j < len)
+		{
+			printf("%c", (data[i + j] >= 32 && data[i + j] < 127) ? data[i + j] : '.');
+			j++;
+		}
+		printf("|\n");
+		i += 16;
+	}
 }
