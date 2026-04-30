@@ -30,11 +30,11 @@ struct __attribute__((packed)) ethernet_header {
 };
 
 struct __attribute__((packed)) arp_packet {
-	uint16_t hw_type;
-	uint16_t proto_type;
-	uint8_t  hw_size;
-	uint8_t  proto_size;
-	uint16_t opcode;
+	uint16_t hw_type; // type d hardware
+	uint16_t proto_type; // protocol ipv4
+	uint8_t  hw_size; // taille du hw
+	uint8_t  proto_size; // taile de ip
+	uint16_t opcode; // si qsk ou reply
 	uint8_t  src_mac[6];
 	uint8_t  src_ip[4];
 	uint8_t  dst_mac[6];
@@ -73,7 +73,7 @@ int  receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs);
 void build_reply(uint8_t *reply, t_addrs *addrs);
 int  send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, int hex);
 int  send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex);
-int  run_spoof(t_addrs *addrs, int interface_idx, uint8_t *buffer, int verbose, int hex);
+int  run_spoof(t_addrs *addrs, int interface_idx, int verbose, int hex);
 
 // log.c
 void log_arp_request(uint8_t *buffer);

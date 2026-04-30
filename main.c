@@ -27,14 +27,14 @@ static void setup_signal_handler(void)
 static int run_ipv4(char **args, t_addrs *addrs, int gratuitous, int verbose, int hex)
 {
 	int     interface_idx; // index de l interface 
-	uint8_t buffer[ARP_FRAME_SIZE];
+
 	if (!load_addresses(args, addrs))
 		return (0);
 	if (!setup_network(&interface_idx))
 		return (0);
 	if (gratuitous)
 		return (send_gratuitous(addrs, interface_idx, verbose, hex)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
-	return (run_spoof(addrs, interface_idx, buffer, verbose, hex));
+	return (run_spoof(addrs, interface_idx, verbose, hex));
 }
 
 int main(int ac, char **av)

@@ -33,12 +33,12 @@ static int bind_to_interface(int sockfd, struct ifaddrs *selected_interface, int
 {
 	unsigned int idx;
 
-	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, selected_interface->ifa_name, ft_strlen(selected_interface->ifa_name) + 1) < 0)
+	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, selected_interface->ifa_name, ft_strlen(selected_interface->ifa_name) + 1) < 0) // SO_BINDTODEVICE va bind (ecouter recevoir que la pour le socket),  SOL_SOCKET config pour tous niveau pas de focus precis sur ll ou ip ou tcp etc.
 	{
 		printf("setsockopt: %s\n", strerror(errno));
 		return (0);
 	}
-	idx = if_nametoindex(selected_interface->ifa_name); // 
+	idx = if_nametoindex(selected_interface->ifa_name); // choppe l index par le nom d interface
 	if (idx == 0)
 	{
 		printf("if_nametoindex: %s\n", strerror(errno));

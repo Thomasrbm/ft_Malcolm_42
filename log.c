@@ -20,7 +20,7 @@ void print_verbose(uint8_t *buffer, t_addrs *addrs)
 	char               ip_str[INET_ADDRSTRLEN];
 
 	arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
-	inet_ntop(AF_INET, arp->src_ip, ip_str, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, arp->src_ip, ip_str, INET_ADDRSTRLEN); // from binair ip octet to text 107.x.x.x : ipv4, version binaire, buffer ou ecrire, taille du buffer (16 pour les chiffret et les . et \0 au max cette taille)
 	printf("[REQUEST] from IP:  %s\n", ip_str);
 	printf("[REQUEST] from MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		arp->src_mac[0], arp->src_mac[1], arp->src_mac[2],
@@ -61,12 +61,12 @@ void hexdump(uint8_t *data, int len)
 	i = 0;
 	while (i < len)
 	{
-		printf("%04x  ", i);
+		printf("%04x  ", i); // offset
 		j = 0;
 		while (j < 16)
 		{
 			if (i + j < len)
-				printf("%02x ", data[i + j]);
+				printf("%02x ", data[i + j]); // les octets 2 par 2 en hexa
 			else
 				printf("   ");
 			if (j == 7)
@@ -77,7 +77,10 @@ void hexdump(uint8_t *data, int len)
 		j = 0;
 		while (j < 16 && i + j < len)
 		{
-			printf("%c", (data[i + j] >= 32 && data[i + j] < 127) ? data[i + j] : '.');
+			if (data[i + j] >= 32 && data[i + j] < 127)// rpz ascii
+    			printf("%c", data[i + j]);
+			else
+    			printf(".");
 			j++;
 		}
 		printf("|\n");

