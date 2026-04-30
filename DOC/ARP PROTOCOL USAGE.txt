@@ -1,0 +1,281 @@
+
+
+Pk des fois ARP et des fois que IP ???
+
+
+
+ARP QUE EN LOCAL
+
+
+Pour internet tu as jamais besoin de savoir qui parle a qui en local tu parle que a l ip general
+de google par exemple.
+
+
+
+
+
+
+En local tu peux avoir un reseau local sans aucun router, juste 3 pc avec un ethernet/wifi.
+
+
+=== PCK comment ca marche la data en local?
+
+
+bah tout est send a tout le monde et le filtre qui dit qui recoit quoi c est le matching entre
+la mac address de la request et celle de la card.
+
+si pas de match le device ecoute meme pas.
+
+
+
+
+donc tu need d avoir la mac car tu peux pas target l onde wifi to une antenne en particulier.
+
+
+
+On pourrait en theorie designer du ethernet targeted juste en ip.
+mais inutile car ip changeante car pratique pour reorganiser du reseau.  on doit donc toujours avoir 
+
+- une adresse changeante
+- une adresse permanente
+
+
+
+servirait a rien d avoir une truc changeant embedded dans la network card.
+reglerait aucun pb et ajouterais complexite. 
+
+
+
+
+--------------------------------------------------
+
+
+
+RIEN NE REGLERAIT LE PB de resolution
+
+
+
+car les machines doivent savoir qui existe sur le reseau et qui est qui, et le faire régulièrement 
+
+comme nombre de machine sur reseau parfois limited bah tu dois redemander souvent qui a cette ip
+pck a pu etre reatribuer etc.
+
+
+et de toute facon meme si tout était ip tu dois toujours identifier qui est sur le reseau et l ip peut pas etre sur un reseau juste en etant hardcoded elle doit s adapter au reseau.
+
+
+
+MAC PERMANENT , pas besoin d adaptation,
+IP adaptation au reseau si en 192.3.45.2  pas pareil que en ... 
+
+--------------------------------------------------
+
+
+avant ip
+
+
+soit tu hardcodait le mac adresse de qui parle a qui
+
+soit si automatique bah re need un broadcast system
+pour automatiser donc same pb de mitm
+
+
+
+
+si ya broadcast et matching identification,  de moi je suis la etc.
+MITM toujours possible
+
+
+
+DONC ENCRYPTER DATA
+
+
+--------------------------------------------------
+
+
+
+
+
+
+Step 1 : 
+
+
+ifconfig  = mask + ip  
+
+
+donc subnet
+
+
+exemnple  178.56.0.4 
+
+submask en 178.56.0.0/24  
+
+255.255.0.0  
+
+--------------
+
+Step 2 : 
+
+arp -p  = arp table minimum ton router
+
+178.56.0.1
+
+FF:dd;aa;cc;ff
+
+--------------
+
+Step 3 : 
+
+
+
+nmap va faire requete arp sur toutes les ip possible du reseau
+
+
+arp a tout le /16 ou /24 de 
+
+
+178.56.0.0
+
+
+recoit reponse donc a la resolution ip/mac
+
+
+
+--------------
+
+Step 4 : 
+
+
+
+
+peut man in the middle et se faire passer 
+
+
+
+
+
+Exemple le client (web server) sait qu il doit parler a tel ip address pour la db pour requete api de l image (hard coded)
+
+
+et la db repond toujours a la meme ip qui vient de lui demande pour le server, elle ecoute un port
+et sait a quelle ip elle doit repondre (si pas safe cypher etc)
+
+
+MAIS SI la db est bien config arp poisoning impossible
+
+
+
+
+
+
+--------------
+
+Step 5 : 
+
+
+
+Tu peux interepter tout (sauf si encrypter car tu vas rien comprendre)
+
+
+mais au final les 2 crois parler au vrai mac de L IP trusted
+
+
+mais tu leur a filer ton mac a toi a chaque fois
+
+
+
+
+
+--------------
+
+
+
+SI HTTPS
+
+
+tu peux rien lire mtn. tu vois rien car tout HTTPS
+
+
+
+MAIS peut voir metadata
+
+
+le payload (la data ) est encrypter mais l ip source et dest, la taille de ce qui est send, which port it is to
+
+tu pourrait rien envoyer si tout etait encrypted.
+
+
+
+==> PHISHING ATTACK avec habits
+
+
+
+
+SI HTTP
+
+
+
+
+tu peux voir la requete get, le cookie si site souvent used, l url precis
+
+(stored login)
+
+
+
+
+tu te login tu send une POST request au serveur avec tout en claire
+
+
+
+
+----- SSL STRIPING, DOWNGRADE HTTPS TO HTTPS
+
+
+
+certains site reçoivent http puis redirige
+
+toi tu peux intercepter ca renvoyer une versions http du site.
+
+
+
+
+les browsers préviennent et empeche ca normalement  
+
+
+
+
+
+
+
+
+
+
+
+
+--------- vrai danger  = faux reseaux wifi
+
+
+
+
+et la le mec te baise.
+
+
+mais tout rely sur user error 
+
+
+car te demande credential pour wifi la t es con si tu ecrit
+
+et pareil si tu va sur http pck il a forcer le stripping bah ton browser te warn
+
+
+
+
+
+Si tout etait https obligatoire y aurai casi aucun problemes
+
+
+
+
+
+
+

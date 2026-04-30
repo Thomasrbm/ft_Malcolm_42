@@ -5,7 +5,7 @@ int g_sockfd = -1;
 void handle_sigint(int sig)
 {
 	(void)sig;
-	printf("\nExiting...\n");
+	printf("\nExiting program...\n");
 	if (g_sockfd != -1)
 		close(g_sockfd);
 	exit(0);
@@ -14,67 +14,69 @@ void handle_sigint(int sig)
 static void setup_signal_handler(void)
 {
 	struct sigaction sa;
-	sa.sa_handler = handle_sigint;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sigaction(SIGINT, &sa, NULL);
+
+	sa.sa_handler = handle_sigint; // la fonction a appliquer
+	sigemptyset(&sa.sa_mask); // remet a 0 pour pas catch des signaux random
+	sa.sa_flags = 0; // same
+	if (sigaction(SIGINT, &sa, NULL) < 0) // le signal a catch pour la structure DONC la ft a appliquer
+		perror("sigaction");
 }
 
-static int parse_args(int ac, char **av, int *verbose, int *arg_offset)
+static int run_ipv4(t_addrs *addrs, int gratuitous, int verbose)
 {
-	if (ac == 6 && strcmp(av[1], "-v") == 0)
+	int     ifindex;
+	uint8_t buffer[ARP_FRAME_SIZE];
+
+	if (!setup_network(&ifindex))
+		return (0);
+	if (gratuitous)
+		return (send_gratuitous(addrs, ifindex, verbose)); // cest quand on envoit ip et mac en brodcase + sans demander qui a cette ip ? je cherche la mac => quand on  s annonce sur le reseau.
+	return (run_spoof(addrs, ifindex, buffer, verbose));
+}
+
+static int dispatch(t_addrs *addrs, char **args, int gratuitous, int verbose,
+					int ipv6_mode)
+{
+	if (ipv6_mode && gratuitous)
 	{
-		*verbose    = 1;
-		*arg_offset = 1;
-		return 1;
+		printf("ft_malcolm: -g is not supported with -6\n");
+		return (0);
 	}
-	if (ac == 5)
-		return 1;
-	printf("Usage: ./ft_malcolm [-v] <source_ip> <source_mac> <target_ip> <target_mac>\n");
-	return 0;
-}
-
-static void print_verbose(uint8_t *buffer, char **args)
-{
-	struct arp_packet *arp = (struct arp_packet *)(buffer + ETH_HEADER_SIZE);
-	printf("[REQUEST] from IP:  %s\n", inet_ntoa(*(struct in_addr *)arp->src_ip));
-	printf("[REQUEST] from MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-		arp->src_mac[0], arp->src_mac[1], arp->src_mac[2],
-		arp->src_mac[3], arp->src_mac[4], arp->src_mac[5]);
-	printf("[REPLY]   spoofing IP:  %s\n", args[0]);
-	printf("[REPLY]   spoofing MAC: %s\n", args[1]);
-	printf("[REPLY]   target IP:    %s\n", args[2]);
-	printf("[REPLY]   target MAC:   %s\n", args[3]);
+	if (ipv6_mode)
+	{
+		if (!load_addresses_v6(args, addrs))
+			return (0);
+		return (run_ndp_spoof(addrs, verbose)); // pas d arp en ipv6  => Neighbor  discovery Protocol
+	}
+	if (!load_addresses(args, addrs))
+		return (0);
+	return (run_ipv4(addrs, gratuitous, verbose));
 }
 
 int main(int ac, char **av)
 {
-	int verbose    = 0;
-	int arg_offset = 0;
+	int     verbose;
+	int     gratuitous;
+	int     ipv6_mode;
+	int     arg_offset;
+	char  **args;
+	t_addrs addrs;
+	int     ret;
 
 	if (getuid() != 0)
 	{
 		printf("ft_malcolm: must be run as root\n");
-		return 1;
+		return (1);
 	}
-	if (!parse_args(ac, av, &verbose, &arg_offset))
-		return 1;
+	if (!parse_args(ac, av, &verbose, &gratuitous, &ipv6_mode, &arg_offset))
+		return (1);
 	setup_signal_handler();
-
-	char   **args = av + 1 + arg_offset; // source_ip, source_mac, target_ip, target_mac
-	t_addrs  addrs;
-	if (!load_addresses(args, &addrs))
-		return 1;
-
-	int ifindex;
-	if (!setup_network(&ifindex))
-		return 1;
-
-	uint8_t buffer[ARP_FRAME_SIZE];
-	if (!run_spoof(&addrs, ifindex, buffer))
-		return 1;
-
-	if (verbose)
-		print_verbose(buffer, args);
-	return 0;
+	args = av + 1 + arg_offset; // commence apres le flag
+	memset(&addrs, 0, sizeof(addrs)); // avant de parser les ips et mac (pas de garbage value)
+	ret = !dispatch(&addrs, args, gratuitous, verbose, ipv6_mode);
+	if (g_sockfd != -1)
+		close(g_sockfd); // close si pas ctrl c mais prog fini
+	if (!ret)
+		printf("Exiting program...\n");
+	return (ret);
 }
