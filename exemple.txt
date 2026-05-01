@@ -1,0 +1,114 @@
+filtre arp
+
+arp and (arp.src.proto_ipv4 in {10.11.6.5, 10.11.200.189, 10.11.200.212}) and (arp.dst.proto_ipv4 in {10.11.6.5, 10.11.200.189, 10.11.200.212})
+
+-------------------
+
+
+hote : 10.11.6.5  90:8d:6e:63:9c:dd    => db 
+kali : 10.11.200.189  08:00:27:8a:35:d2   => webserver
+
+
+
+nixos (moi) : 10.11.200.212  08:00:27:90:ea:72 
+
+
+
+
+arping -c 1 -I eth0 10.11.200.212
+
+
+
+------- condition reelle :
+
+route -n
+
+gateway 10.11.254.254
+
+
+
+sudo nmap -sn -PR 10.11.0.0/16
+
+sudo nmap -sn -PR 10.11.200.0/24  pour aller plus vite
+(on va pas voir la max nixos car la notre)
+
+
+-sn ping 
+-PR arp
+
+
+
+
+-------
+
+
+
+
+
+arping kali vers hote
+
+
+sudo arping -c 1 -I eth0 10.11.6.5
+
+
+
+
+sudo ip neigh flush all
+ping -c 1 10.11.6.5
+arp -a | grep 10.11.6.5
+
+
+
+
+
+
+
+
+
+--------------------------
+
+
+# état actuel
+sysctl net.ipv4.conf.eth0.arp_accept
+sysctl net.ipv4.conf.all.arp_accept
+
+# autoriser les replies non sollicitées à mettre à jour le cache
+sudo sysctl -w net.ipv4.conf.all.arp_accept=1
+sudo sysctl -w net.ipv4.conf.eth0.arp_accept=1
+
+# vide cache
+sudo ip neigh flush all
+
+
+
+ # vérifier que le module est chargé
+sudo modprobe arptable_filter
+lsmod | grep arp
+
+# ajouter la règle
+sudo arptables -A INPUT --source-mac 90:8d:6e:63:9c:dd -j DROP
+
+# vérifier qu'elle est bien là
+sudo arptables -L -v
+
+
+
+
+------------------------------------
+
+
+
+-v  
+
+
+-hex = montre la replis en hexdump
+
+
+
+-g   = gratuitous 
+
+
+
++ ip classique decimal
+
+hostname : sudo ./ft_malcolm c1r6p5.42lehavre.fr 08:00:27:90:ea:72 10.11.200.189 08:00:27:8a:35:d2
