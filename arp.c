@@ -48,7 +48,7 @@ void build_reply(uint8_t *reply, t_addrs *addrs)
 	ft_memcpy(arp->dst_ip,  addrs->target_ip,  4);
 }
 
-int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, int hex)
+int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, t_flags *flags)
 {
 	struct sockaddr_ll dest;
 
@@ -57,7 +57,7 @@ int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_id
 	dest.sll_family  = AF_PACKET; // packet L2
 	dest.sll_halen   = 6; // mac Len
 	ft_memcpy(dest.sll_addr, target_mac, 6); // mac victime
-	if (hex)
+	if (flags->has_hex)
 		hexdump(reply, ARP_FRAME_SIZE);
 	if (sendto(sockfd, reply, ARP_FRAME_SIZE, 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
@@ -68,18 +68,18 @@ int send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_id
 	return (1);
 }
 
-int send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex)
+int send_gratuitous(t_addrs *addrs, int interface_idx, t_flags *flags)
 {
 	uint8_t reply[ARP_FRAME_SIZE];
 
-	if (verbose)
+	if (flags->has_verbose)
 		print_verbose_gratuitous(addrs);
 	build_reply(reply, addrs);
 	printf("Sending gratuitous ARP reply...\n");
-	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, hex));
+	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, flags));
 }
 
-int run_spoof(t_addrs *addrs, int interface_idx, int verbose, int hex)
+int run_spoof(t_addrs *addrs, int interface_idx, t_flags *flags)
 {
 	uint8_t 			reply[ARP_FRAME_SIZE];
 	uint8_t 			buffer[ARP_FRAME_SIZE];
@@ -87,9 +87,9 @@ int run_spoof(t_addrs *addrs, int interface_idx, int verbose, int hex)
 	if (!receive_arp(g_sockfd, buffer, addrs))
 		return (0);
 	log_arp_request(buffer);
-	if (verbose)
+	if (flags->has_verbose)
 		print_verbose(buffer, addrs);
 	printf("Now sending an ARP reply to the target address with spoofed source, please wait...\n");
 	build_reply(reply, addrs);
-	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, hex));
+	return (send_reply(g_sockfd, reply, addrs->target_mac, interface_idx, flags));
 }

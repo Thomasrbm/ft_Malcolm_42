@@ -48,6 +48,12 @@ typedef struct s_addrs {
 	uint8_t target_mac[6];
 } t_addrs;
 
+typedef struct s_flags {
+	int has_verbose;
+	int has_gratuitous;
+	int has_hex;
+} t_flags;
+
 // utils.c
 void         *ft_memset(void *s, int c, size_t n);
 void         *ft_memcpy(void *dst, const void *src, size_t n);
@@ -57,8 +63,7 @@ size_t        ft_strlen(const char *s);
 unsigned long ft_strtoul(const char *ptr, char **endptr, int base);
 
 // args.c
-int  parse_args(int ac, char **av, int *verbose, int *gratuitous,
-		int *hex, int *arg_offset);
+int  parse_args(int ac, char **av, t_flags *flags, int *arg_offset);
 
 // parse.c
 int  MAC_getter(char *to_convert, uint8_t *converted);
@@ -71,9 +76,9 @@ int  setup_network(int *interface_idx);
 // arp.c
 int  receive_arp(int sockfd, uint8_t *buffer, t_addrs *addrs);
 void build_reply(uint8_t *reply, t_addrs *addrs);
-int  send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, int hex);
-int  send_gratuitous(t_addrs *addrs, int interface_idx, int verbose, int hex);
-int  run_spoof(t_addrs *addrs, int interface_idx, int verbose, int hex);
+int  send_reply(int sockfd, uint8_t *reply, uint8_t *target_mac, int interface_idx, t_flags *flags);
+int  send_gratuitous(t_addrs *addrs, int interface_idx, t_flags *flags);
+int  run_spoof(t_addrs *addrs, int interface_idx, t_flags *flags);
 
 // log.c
 void log_arp_request(uint8_t *buffer);

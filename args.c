@@ -1,31 +1,30 @@
 #include "ft_malcolm.h"
 
-static int parse_flag(char *flag, int *verbose, int *gratuitous, int *hex)
+static int parse_flag(char *flag, t_flags *flags)
 {
 	if (ft_strcmp(flag, "-v") == 0)
-		*verbose = 1;
+		flags->has_verbose = 1;
 	else if (ft_strcmp(flag, "-g") == 0)
-		*gratuitous = 1;
+		flags->has_gratuitous = 1;
 	else if (ft_strcmp(flag, "-hex") == 0)
-		*hex = 1;
+		flags->has_hex = 1;
 	else
 		return (0);
 	return (1);
 }
 
-int parse_args(int ac, char **av, int *verbose, int *gratuitous,
-				int *hex, int *arg_offset)
+int parse_args(int ac, char **av, t_flags *flags, int *arg_offset)
 {
 	int i;
 
-	*verbose = 0;
-	*gratuitous = 0;
-	*hex = 0;
+	flags->has_verbose = 0;
+	flags->has_gratuitous = 0;
+	flags->has_hex = 0;
 	*arg_offset = 0;
 	i = 1;
 	while (i < ac && av[i][0] == '-')
 	{
-		if (!parse_flag(av[i], verbose, gratuitous, hex))
+		if (!parse_flag(av[i], flags))
 		{
 			printf("Usage: ./ft_malcolm [-v] [-g] [-hex] <source_ip> <source_mac> <target_ip> <target_mac>\n");
 			return (0);
